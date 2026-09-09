@@ -6,7 +6,7 @@ import Badge from './Badge'
 import PremiumBadge from './PremiumBadge'
 
 function toWhatsappLink(contact) {
-  const digits = (contact || '').replace(/[^\d+]/g, '').replace('+', '')
+  const digits = String(contact || '').replace(/[^\d+]/g, '').replace('+', '')
   return `https://wa.me/${digits}`
 }
 
