@@ -6,13 +6,14 @@ import PostComposer from '../components/PostComposer'
 import LiveAudio from '../components/LiveAudio'
 import AdminPanel from '../components/AdminPanel'
 import Marketplace from '../components/Marketplace'
+import Testimonies from '../components/Testimonies'
 import PremiumBadge from '../components/PremiumBadge'
 import MyProfile from './MyProfile'
 
-const TABS = ['Service', 'Actualités', 'Infos travail', 'Marché', 'Direct', 'Mon profil', 'Administration']
+const TABS = ['Service', 'Actualités', 'Infos travail', 'Marché', 'Témoignages', 'Direct', 'Mon profil', 'Administration']
 
 export default function Home() {
-  const { profile, isSemiAdmin, isAdmin, isPremium, logout } = useAuth()
+  const { profile, isSemiAdmin, isAdmin, isPremium, canManage, logout } = useAuth()
   const [tab, setTab] = useState('Service')
 
   const visibleTabs = TABS.filter((t) => t !== 'Administration' || isAdmin)
@@ -50,23 +51,25 @@ export default function Home() {
 
         {tab === 'Actualités' && (
           <div>
-            {isSemiAdmin && (
+            {canManage('actualites') && (
               <PostComposer basePath="posts/culte" allowedTypes={['texte', 'vocal', 'image']} defaultDurationHours={24} />
             )}
-            <PostFeed basePath="posts/culte" />
+            <PostFeed basePath="posts/culte" canDelete={canManage('actualites')} />
           </div>
         )}
 
         {tab === 'Infos travail' && (
           <div>
-            {isSemiAdmin && (
+            {canManage('infosTravail') && (
               <PostComposer basePath="posts/travail" allowedTypes={['texte', 'image']} defaultDurationHours={168} />
             )}
-            <PostFeed basePath="posts/travail" />
+            <PostFeed basePath="posts/travail" canDelete={canManage('infosTravail')} />
           </div>
         )}
 
         {tab === 'Marché' && <Marketplace />}
+
+        {tab === 'Témoignages' && <Testimonies />}
 
         {tab === 'Direct' && <LiveAudio />}
 

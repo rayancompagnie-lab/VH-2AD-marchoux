@@ -6,8 +6,8 @@ import { cleanupExpiredPosts, isExpired } from '../utils/ttl'
 
 const REACTION_EMOJIS = ['🙏', '❤️', '🔥', '👏', '🎉']
 
-export default function PostFeed({ basePath }) {
-  const { user, isAdmin } = useAuth()
+export default function PostFeed({ basePath, canDelete }) {
+  const { user } = useAuth()
   const [posts, setPosts] = useState([])
 
   useEffect(() => {
@@ -77,7 +77,7 @@ export default function PostFeed({ basePath }) {
             })}
           </div>
 
-          {isAdmin && (
+          {canDelete && (
             <button className="delete-btn" onClick={() => deletePost(post.id)}>
               🗑️ Supprimer
             </button>

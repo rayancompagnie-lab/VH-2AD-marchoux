@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { fileToResizedBase64 } from '../utils/images'
+import { normalizeIvorianPhone } from '../utils/phone'
 
 export default function CompleteProfile() {
   const { user, completeMemberProfile } = useAuth()
@@ -39,7 +40,7 @@ export default function CompleteProfile() {
     try {
       const photoPrincipale = await fileToResizedBase64(photo1)
       const photoSecondaire = photo2 ? await fileToResizedBase64(photo2) : ''
-      await completeMemberProfile(user.uid, { ...form, photoPrincipale, photoSecondaire })
+      await completeMemberProfile(user.uid, { ...form, contact: normalizeIvorianPhone(form.contact), photoPrincipale, photoSecondaire })
       navigate('/')
     } finally {
       setSending(false)
@@ -65,7 +66,7 @@ export default function CompleteProfile() {
         <input placeholder="Titre / responsabilité (facultatif)" value={form.titre} onChange={(e) => update('titre', e.target.value)} />
         <input placeholder="Travail ou expérience (facultatif)" value={form.experience} onChange={(e) => update('experience', e.target.value)} />
         <label className="field-with-toggle">
-          <input placeholder="Contact WhatsApp (obligatoire)" value={form.contact} onChange={(e) => update('contact', e.target.value)} required />
+          <input placeholder="Contact WhatsApp (obligatoire), ex: 0102030405" value={form.contact} onChange={(e) => update('contact', e.target.value)} required />
           <span><input type="checkbox" checked={form.contactVisible} onChange={(e) => update('contactVisible', e.target.checked)} /> Afficher mon contact publiquement</span>
         </label>
         <label className="field-with-toggle">

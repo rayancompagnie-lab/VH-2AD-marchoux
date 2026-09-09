@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { fileToResizedBase64 } from '../utils/images'
+import { normalizeIvorianPhone } from '../utils/phone'
 import PasswordField from '../components/PasswordField'
 
 export default function Register() {
@@ -45,7 +46,7 @@ export default function Register() {
     try {
       const photoPrincipale = await fileToResizedBase64(photo1)
       const photoSecondaire = photo2 ? await fileToResizedBase64(photo2) : ''
-      await registerWithEmail({ ...form, photoPrincipale, photoSecondaire })
+      await registerWithEmail({ ...form, contact: normalizeIvorianPhone(form.contact), photoPrincipale, photoSecondaire })
       navigate('/')
     } catch (err) {
       setError("Impossible de créer le compte (email déjà utilisé ou mot de passe trop court).")
@@ -79,7 +80,7 @@ export default function Register() {
         <input placeholder="Travail ou expérience (facultatif)" value={form.experience} onChange={(e) => update('experience', e.target.value)} />
 
         <label className="field-with-toggle">
-          <input placeholder="Contact WhatsApp (obligatoire), ex: +225XXXXXXXXXX" value={form.contact} onChange={(e) => update('contact', e.target.value)} required />
+          <input placeholder="Contact WhatsApp (obligatoire), ex: 0102030405" value={form.contact} onChange={(e) => update('contact', e.target.value)} required />
           <span>
             <input type="checkbox" checked={form.contactVisible} onChange={(e) => update('contactVisible', e.target.checked)} /> Afficher mon contact publiquement
           </span>

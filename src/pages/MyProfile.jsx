@@ -3,6 +3,7 @@ import { ref, set } from 'firebase/database'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { fileToResizedBase64 } from '../utils/images'
+import { normalizeIvorianPhone } from '../utils/phone'
 import PremiumBadge from '../components/PremiumBadge'
 
 export default function MyProfile() {
@@ -39,7 +40,7 @@ export default function MyProfile() {
     try {
       const photoPrincipale = newPhoto1 ? await fileToResizedBase64(newPhoto1) : profile.photoPrincipale
       const photoSecondaire = newPhoto2 ? await fileToResizedBase64(newPhoto2) : profile.photoSecondaire
-      await set(ref(db, `users/${user.uid}`), { ...profile, ...form, photoPrincipale, photoSecondaire })
+      await set(ref(db, `users/${user.uid}`), { ...profile, ...form, contact: normalizeIvorianPhone(form.contact), photoPrincipale, photoSecondaire })
       setSaved(true)
       setNewPhoto1(null)
       setNewPhoto2(null)
@@ -79,7 +80,7 @@ export default function MyProfile() {
         <input placeholder="Travail ou expérience (facultatif)" value={form.experience} onChange={(e) => update('experience', e.target.value)} />
 
         <label className="field-with-toggle">
-          <input placeholder="Contact WhatsApp (obligatoire)" value={form.contact} onChange={(e) => update('contact', e.target.value)} required />
+          <input placeholder="Contact WhatsApp (obligatoire), ex: 0102030405" value={form.contact} onChange={(e) => update('contact', e.target.value)} required />
           <span><input type="checkbox" checked={form.contactVisible} onChange={(e) => update('contactVisible', e.target.checked)} /> Afficher mon contact publiquement</span>
         </label>
 

@@ -6,6 +6,7 @@ import { fileToResizedBase64 } from '../utils/images'
 import PremiumBadge from './PremiumBadge'
 
 const FREE_LIMIT = 5
+const PREMIUM_LIMIT = 20
 const PREMIUM_WHATSAPP = '2250160672966' // +225 01 60 67 29 66
 
 function toWhatsappLink(contact, message) {
@@ -15,7 +16,7 @@ function toWhatsappLink(contact, message) {
 }
 
 export default function Marketplace() {
-  const { user, profile, isPremium, isAdmin } = useAuth()
+  const { user, profile, isPremium, isAdmin, canManage } = useAuth()
   const [articles, setArticles] = useState([])
   const [titre, setTitre] = useState('')
   const [description, setDescription] = useState('')
@@ -24,18 +25,27 @@ export default function Marketplace() {
   const [sending, setSending] = useState(false)
 
   useEffect(() => {
-    const unsubscribe = onValue(ref(db, 'marche'), (snap) => {
-      const data = snap.val() || {}
-      const list = Object.entries(data)
-        .map(([id, a]) => ({ id, ...a }))
-        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
-      setArticles(list)
-    })
+    const unsubscribe = onValue(
+      ref(db, 'marche'),
+      (snap) => {
+        const data = snap.val() || {}
+        const list = Object.entries(data)
+          .map(([id, a]) => ({ id, ...a }))
+          .sort((a, b) => {
+            const premiumDiff = (b.authorPremium ? 1 : 0) - (a.authorPremium ? 1 : 0)
+            if (premiumDiff !== 0) return premiumDiff
+            return (b.createdAt || 0) - (a.createdAt || 0)
+          })
+        setArticles(list)
+      },
+      (err) => setError('Impossible de charger le Marché : ' + err.message)
+    )
     return unsubscribe
   }, [])
 
   const myArticles = articles.filter((a) => a.authorUid === user?.uid)
-  const reachedLimit = !isPremium && myArticles.length >= FREE_LIMIT
+  const limit = isPremium ? PREMIUM_LIMIT : FREE_LIMIT
+  const reachedLimit = myArticles.length >= limit
 
   async function handleImagesChange(e) {
     const files = Array.from(e.target.files).slice(0, 3)
@@ -67,13 +77,20 @@ export default function Marketplace() {
       setTitre('')
       setDescription('')
       setImages([])
+    } catch (err) {
+      setError('Échec de la publication : ' + err.message)
     } finally {
       setSending(false)
     }
   }
 
   async function deleteArticle(id) {
-    await remove(ref(db, `marche/${id}`))
+    if (!window.confirm('Supprimer définitivement cet article ?')) return
+    try {
+      await remove(ref(db, `marche/${id}`))
+    } catch (err) {
+      setError('Échec de la suppression : ' + err.message)
+    }
   }
 
   return (
@@ -87,46 +104,66 @@ export default function Marketplace() {
           <textarea placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
           <input type="file" accept="image/*" multiple onChange={handleImagesChange} />
           <p className="muted-small">
-            {myArticles.length}/{isPremium ? '∞' : FREE_LIMIT} articles publiés {isPremium && <PremiumBadge show />}
+            {myArticles.length}/{limit} articles publiés {isPremium && <PremiumBadge show />}
           </p>
           <button type="submit" disabled={sending}>{sending ? 'Publication...' : "Publier l'article"}</button>
         </form>
       ) : (
         <div className="premium-cta">
-          <p>Tu as atteint tes {FREE_LIMIT} articles gratuits sur le Marché.</p>
-          <p>Passe au mode <strong>Premium</strong> (1000 FCFA/mois) pour publier sans limite, avec un badge ⭐ à côté de ton nom.</p>
-          <a
-            className="contact-btn"
-            href={toWhatsappLink(
-              PREMIUM_WHATSAPP,
-              `Bonjour, je souhaite passer au mode Premium sur Vase d'honneur (compte : ${profile?.prenom} ${profile?.nom}).`
-            )}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Passer en Premium sur WhatsApp
-          </a>
+          {error && <p className="error">{error}</p>}
+          <p>Tu as atteint tes {limit} articles {isPremium ? 'Premium' : 'gratuits'} sur le Marché.</p>
+          {!isPremium && (
+            <>
+              <p>Passe au mode <strong>Premium</strong> (1000 FCFA/mois) pour publier jusqu'à {PREMIUM_LIMIT} articles, avec un badge ⭐ à côté de ton nom.</p>
+              <a
+                className="contact-btn"
+                href={toWhatsappLink(
+                  PREMIUM_WHATSAPP,
+                  `Bonjour, je souhaite passer au mode Premium sur Vase d'honneur (compte : ${profile?.prenom} ${profile?.nom}).`
+                )}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Passer en Premium sur WhatsApp
+              </a>
+            </>
+          )}
         </div>
       )}
 
-      <div className="market-grid">
+      <div className="market-feed">
+        {articles.length === 0 && <p>Aucun article publié pour le moment.</p>}
         {articles.map((a) => (
-          <div key={a.id} className="market-card">
-            {a.images?.[0] && <img src={a.images[0]} alt={a.titre} className="market-image" />}
-            <h3>{a.titre}</h3>
-            <p className="market-author">{a.authorName} <PremiumBadge show={a.authorPremium} /></p>
-            <p>{a.description}</p>
+          <div key={a.id} className="market-card-large">
+            {a.images?.length > 0 && (
+              <div className="market-gallery">
+                {a.images.map((img, i) => (
+                  <img key={i} src={img} alt={a.titre} className="market-image-large" />
+                ))}
+              </div>
+            )}
+            <div className="market-card-body">
+              <h3>
+                {a.titre} {a.authorPremium && <PremiumBadge show />}
+              </h3>
+              <p className="market-author">Par {a.authorName}</p>
+              <p className="market-description">{a.description}</p>
+            </div>
             {a.authorContact && (
-              <a className="contact-btn" href={toWhatsappLink(a.authorContact)} target="_blank" rel="noreferrer">
-                Contacter le vendeur
+              <a
+                className="order-btn"
+                href={toWhatsappLink(a.authorContact, `Bonjour, je suis intéressé(e) par "${a.titre}" vu sur Vase d'honneur.`)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                🛒 Commander sur WhatsApp
               </a>
             )}
-            {(a.authorUid === user?.uid || isAdmin) && (
+            {(a.authorUid === user?.uid || canManage('marche')) && (
               <button className="delete-btn" onClick={() => deleteArticle(a.id)}>Supprimer</button>
             )}
           </div>
         ))}
-        {articles.length === 0 && <p>Aucun article publié pour le moment.</p>}
       </div>
     </div>
   )

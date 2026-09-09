@@ -13,6 +13,9 @@
         "premium": {
           ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
         },
+        "secteurs": {
+          ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
+        },
         "badges": {
           ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'semiAdmin'"
         }
@@ -28,7 +31,7 @@
       "culte": {
         ".read": "auth != null",
         "$postId": {
-          ".write": "auth != null && (!data.exists() ? (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'semiAdmin') : (data.child('authorUid').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin'))",
+          ".write": "auth != null && (!data.exists() ? (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('secteurs').child('actualites').val() === true) : (data.child('authorUid').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('secteurs').child('actualites').val() === true))",
           "reactions": {
             "$emoji": {
               "$uid": {
@@ -41,7 +44,7 @@
       "travail": {
         ".read": "auth != null",
         "$postId": {
-          ".write": "auth != null && (!data.exists() ? (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'semiAdmin') : (data.child('authorUid').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin'))",
+          ".write": "auth != null && (!data.exists() ? (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('secteurs').child('infosTravail').val() === true) : (data.child('authorUid').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('secteurs').child('infosTravail').val() === true))",
           "reactions": {
             "$emoji": {
               "$uid": {
@@ -63,7 +66,14 @@
     "marche": {
       ".read": "auth != null",
       "$articleId": {
-        ".write": "auth != null && (!data.exists() || data.child('authorUid').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+        ".write": "auth != null && (!data.exists() || data.child('authorUid').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('secteurs').child('marche').val() === true)"
+      }
+    },
+
+    "temoignages": {
+      ".read": "auth != null",
+      "$temoignageId": {
+        ".write": "auth != null && (!data.exists() || data.child('authorUid').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('secteurs').child('temoignages').val() === true)"
       }
     }
   }

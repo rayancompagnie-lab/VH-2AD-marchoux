@@ -55,6 +55,7 @@ export function AuthProvider({ children }) {
       photoPrincipale: data.photoPrincipale || '',
       photoSecondaire: data.photoSecondaire || '',
       role: 'member', // 'member' | 'semiAdmin' | 'admin'
+      secteurs: {}, // pour les semi-admins : { actualites, infosTravail, marche, temoignages }
       badges: {},
       profileComplete: complete,
       createdAt: serverTimestamp()
@@ -111,13 +112,23 @@ export function AuthProvider({ children }) {
     return signOut(auth)
   }
 
+  const isAdminValue = profile?.role === 'admin'
+
+  // Un semi-admin ne gère que le(s) secteur(s) qui lui ont été confiés
+  // (ex: "marche", "actualites", "infosTravail", "temoignages"). Un admin
+  // gère tout automatiquement.
+  function canManage(secteur) {
+    return isAdminValue || !!profile?.secteurs?.[secteur]
+  }
+
   const value = {
     user,
     profile,
     loading,
-    isAdmin: profile?.role === 'admin',
-    isSemiAdmin: profile?.role === 'semiAdmin' || profile?.role === 'admin',
-    isPremium: !!profile?.premium || profile?.role === 'admin',
+    isAdmin: isAdminValue,
+    isSemiAdmin: profile?.role === 'semiAdmin' || isAdminValue,
+    isPremium: !!profile?.premium || isAdminValue,
+    canManage,
     registerWithEmail,
     loginWithEmail,
     loginWithGoogle,
