@@ -1,0 +1,70 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "users": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        "role": {
+          ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
+        },
+        "premium": {
+          ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
+        },
+        "badges": {
+          ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'semiAdmin'"
+        }
+      }
+    },
+
+    "badges": {
+      ".read": "auth != null",
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'semiAdmin')"
+    },
+
+    "posts": {
+      "culte": {
+        ".read": "auth != null",
+        "$postId": {
+          ".write": "auth != null && (!data.exists() ? (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'semiAdmin') : (data.child('authorUid').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin'))",
+          "reactions": {
+            "$emoji": {
+              "$uid": {
+                ".write": "auth != null && auth.uid === $uid"
+              }
+            }
+          }
+        }
+      },
+      "travail": {
+        ".read": "auth != null",
+        "$postId": {
+          ".write": "auth != null && (!data.exists() ? (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'semiAdmin') : (data.child('authorUid').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin'))",
+          "reactions": {
+            "$emoji": {
+              "$uid": {
+                ".write": "auth != null && auth.uid === $uid"
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "liveSessions": {
+      ".read": "auth != null",
+      "current": {
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+      }
+    },
+
+    "marche": {
+      ".read": "auth != null",
+      "$articleId": {
+        ".write": "auth != null && (!data.exists() || data.child('authorUid').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
+    }
+  }
+}
