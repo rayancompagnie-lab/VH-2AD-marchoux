@@ -34,7 +34,7 @@ export default function Marketplace() {
     return unsubscribe
   }, [])
 
-  const myArticles = articles.filter((a) => a.authorUid === user.uid)
+  const myArticles = articles.filter((a) => a.authorUid === user?.uid)
   const reachedLimit = !isPremium && myArticles.length >= FREE_LIMIT
 
   async function handleImagesChange(e) {
@@ -121,7 +121,7 @@ export default function Marketplace() {
                 Contacter le vendeur
               </a>
             )}
-            {(a.authorUid === user.uid || isAdmin) && (
+            {(a.authorUid === user?.uid || isAdmin) && (
               <button className="delete-btn" onClick={() => deleteArticle(a.id)}>Supprimer</button>
             )}
           </div>

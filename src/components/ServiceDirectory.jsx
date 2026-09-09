@@ -43,7 +43,7 @@ export default function ServiceDirectory() {
                 {m.photoPrincipale && <img src={m.photoPrincipale} alt={`${m.prenom} ${m.nom}`} className="member-avatar" />}
                 <h3>
                   {m.prenom} {m.nom}{' '}
-                  <PremiumBadge show={premium} canRequest={!premium && m.uid === user.uid} name={`${m.prenom} ${m.nom}`} />
+                  <PremiumBadge show={premium} canRequest={!premium && m.uid === user?.uid} name={`${m.prenom} ${m.nom}`} />
                 </h3>
                 {m.titre && <p className="titre">{m.titre}</p>}
                 <p className="service">{m.service}</p>

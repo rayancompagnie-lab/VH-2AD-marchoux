@@ -524,3 +524,24 @@ img { max-width: 100%; display: block; }
   .tab-content { padding: 14px 10px 50px; }
   .member-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
 }
+
+.error-boundary {
+  max-width: 420px;
+  margin: 80px auto;
+  padding: 24px;
+  text-align: center;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.error-boundary h2 { color: var(--color-crimson-dark); }
+.error-boundary button {
+  margin-top: 12px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: var(--color-teal-dark);
+  color: white;
+  cursor: pointer;
+  font-weight: 700;
+}

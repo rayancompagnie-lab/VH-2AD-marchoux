@@ -128,7 +128,7 @@ export default function LiveAudio() {
       {isAdmin && !live?.active && (
         <button onClick={startBroadcast}>🔴 Démarrer le direct</button>
       )}
-      {isAdmin && live?.active && live.startedByUid === user.uid && (
+      {isAdmin && live?.active && live.startedByUid === user?.uid && (
         <button onClick={stopBroadcast}>⏹️ Arrêter le direct</button>
       )}
 
