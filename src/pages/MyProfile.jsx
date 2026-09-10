@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { fileToResizedBase64 } from '../utils/images'
 import { normalizeIvorianPhone } from '../utils/phone'
 import { findTribu, findStatut } from '../utils/groups'
-import PremiumBadge from './PremiumBadge'
+import PremiumBadge from '../components/PremiumBadge'   // ✅ corrigé
 
 export default function MyProfile() {
   const { user, profile } = useAuth()
@@ -95,7 +95,9 @@ export default function MyProfile() {
 
         <label className="field-with-toggle">
           <input placeholder="Mon service" value={form.service} onChange={(e) => updateField('service', e.target.value)} />
-          <span><input type="checkbox" checked={form.serviceVisible} onChange={(e) => updateField('serviceVisible', e.target.checked)} /> Apparaître dans l'annuaire des services</span>
+          <span>
+            <input type="checkbox" checked={form.serviceVisible} onChange={(e) => updateField('serviceVisible', e.target.checked)} /> Apparaître dans l'annuaire des services
+          </span>
         </label>
 
         <button type="submit" disabled={sending}>{sending ? 'Enregistrement...' : 'Enregistrer'}</button>
