@@ -1,27 +1,30 @@
-// api/agora-token.js
-// Fonction serverless Vercel — format ESM (cohérent avec "type": "module" du package.json)
+// Fichier en .cjs (CommonJS) volontairement : le reste du projet est en "type": "module"
+// (Vite), mais les fonctions serverless Vercel sont plus fiables en CommonJS classique
+// avec des packages comme agora-access-token qui ne sont pas pensés pour l'ESM.
 
-import { RtcTokenBuilder, RtcRole } from 'agora-access-token'
-
-export default function handler(req, res) {
+module.exports = (req, res) => {
   try {
+    const { RtcTokenBuilder, RtcRole } = require('agora-access-token')
+
     const { channel, uid, role } = req.query || {}
 
     const appId = process.env.VITE_AGORA_APP_ID
     const appCertificate = process.env.AGORA_APP_CERTIFICATE
 
     if (!appId || !appCertificate) {
-      return res.status(500).json({
+      res.status(500).json({
         error: 'Configuration Agora manquante côté serveur.',
         details: {
           appIdPresent: !!appId,
           appCertificatePresent: !!appCertificate
         }
       })
+      return
     }
 
     if (!channel || !uid) {
-      return res.status(400).json({ error: 'Paramètres "channel" et "uid" requis.' })
+      res.status(400).json({ error: 'Paramètres "channel" et "uid" requis.' })
+      return
     }
 
     const agoraRole = role === 'host' ? RtcRole.PUBLISHER : RtcRole.SUBSCRIBER
@@ -38,11 +41,10 @@ export default function handler(req, res) {
       privilegeExpiredTs
     )
 
-    return res.status(200).json({ token })
+    res.status(200).json({ token })
   } catch (err) {
-    return res.status(500).json({
-      error: 'Erreur interne lors de la génération du token.',
-      message: err.message
-    })
+    // On renvoie le détail de l'erreur au lieu de laisser la fonction planter
+    // silencieusement (FUNCTION_INVOCATION_FAILED sans explication).
+    res.status(500).json({ error: 'Erreur interne lors de la génération du token.', message: err.message })
   }
 }
