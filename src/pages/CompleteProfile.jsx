@@ -13,7 +13,7 @@ export default function CompleteProfile() {
   const [photo1, setPhoto1] = useState(null)
   const [photo2, setPhoto2] = useState(null)
   const [form, setForm] = useState({
-    sexe: '',
+    sexe: '',              // 👈 ajouté dans l’état initial
     titre: '',
     experience: '',
     contact: '',
@@ -31,7 +31,7 @@ export default function CompleteProfile() {
   async function handleSubmit(e) {
     e.preventDefault()
     if (!form.sexe) {
-      setError('Choisis ton sexe.')
+      setError('Choisis ton sexe.')   // 👈 validation ajoutée
       return
     }
     if (!form.contact) {
@@ -73,6 +73,7 @@ export default function CompleteProfile() {
       <form onSubmit={handleSubmit} className="auth-form">
         {error && <p className="error">{error}</p>}
 
+        {/* 👇 Champ sexe ajouté dans le formulaire */}
         <select value={form.sexe} onChange={(e) => update('sexe', e.target.value)} required>
           <option value="">Choisis ton sexe</option>
           <option value="homme">Homme 🛡️ (Kanegnon)</option>
@@ -109,7 +110,9 @@ export default function CompleteProfile() {
 
         <label className="field-with-toggle">
           <input placeholder="Mon service" value={form.service} onChange={(e) => update('service', e.target.value)} />
-          <span><input type="checkbox" checked={form.serviceVisible} onChange={(e) => update('serviceVisible', e.target.checked)} /> Apparaître dans l'annuaire des services</span>
+          <span>
+            <input type="checkbox" checked={form.serviceVisible} onChange={(e) => update('serviceVisible', e.target.checked)} /> Apparaître dans l'annuaire des services
+          </span>
         </label>
         <button type="submit" disabled={sending}>{sending ? 'Validation...' : 'Valider'}</button>
       </form>

@@ -12,11 +12,11 @@ import Marketplace from '../components/Marketplace'
 import Testimonies from '../components/Testimonies'
 import PremiumBadge from '../components/PremiumBadge'
 import GroupBoard from '../components/GroupBoard'
-import LeamanBoard from '../components/LeamanBoard'
-import KanegnonBoard from '../components/KanegnonBoard'
+import LeamanBoard from '../components/LeamanBoard'   // 👈 import
+import KanegnonBoard from '../components/KanegnonBoard' // 👈 import
 import MyProfile from './MyProfile'
-import Attendance from './Attendance'                  // 👈 NOUVEAU
-import AttendanceReport from '../components/AttendanceReport' // 👈 NOUVEAU
+import Attendance from './Attendance'
+import AttendanceReport from '../components/AttendanceReport'
 
 const STATIC_TABS = [
   'Service',
@@ -24,10 +24,10 @@ const STATIC_TABS = [
   'Infos travail',
   'Marché',
   'Témoignages',
-  'Présence',         // 👈 NOUVEAU
+  'Présence',
   'Direct',
   'Mon profil',
-  'Rapport de présence',   // 👈 NOUVEAU (admin seulement)
+  'Rapport de présence',   // admin seulement
   'Administration'
 ]
 
@@ -88,8 +88,9 @@ export default function Home() {
       if (t === 'Rapport de présence' && !isAdmin) return false
       return true
     }),
-    ...(profile?.sexe === 'femme' ? ['🌸 Leaman'] : []),
-    ...(profile?.sexe === 'homme' ? ['🛡️ Kanegnon'] : []),
+    // Ajout dynamique selon le sexe
+    ...(profile?.sexe === 'femme' ? ['Leaman'] : []),
+    ...(profile?.sexe === 'homme' ? ['Kanegnon'] : []),
     ...myGroups.map((g) => g.label)
   ]
 
@@ -125,7 +126,6 @@ export default function Home() {
 
       <main className="tab-content">
         {tab === 'Service' && <ServiceDirectory />}
-
         {tab === 'Actualités' && (
           <div>
             {canManage('actualites') && (
@@ -134,7 +134,6 @@ export default function Home() {
             <PostFeed basePath="posts/culte" canDelete={canManage('actualites')} />
           </div>
         )}
-
         {tab === 'Infos travail' && (
           <div>
             {canManage('infosTravail') && (
@@ -143,16 +142,15 @@ export default function Home() {
             <PostFeed basePath="posts/travail" canDelete={canManage('infosTravail')} />
           </div>
         )}
-
         {tab === 'Marché' && <Marketplace />}
         {tab === 'Témoignages' && <Testimonies />}
-        {tab === 'Présence' && <Attendance />}               {/* 👈 NOUVEAU */}
+        {tab === 'Présence' && <Attendance />}
         {tab === 'Direct' && <LiveAudio />}
         {tab === 'Mon profil' && <MyProfile />}
-        {tab === 'Rapport de présence' && isAdmin && <AttendanceReport />} {/* 👈 NOUVEAU */}
+        {tab === 'Rapport de présence' && isAdmin && <AttendanceReport />}
         {tab === 'Administration' && isAdmin && <AdminPanel />}
-        {tab === '🌸 Leaman' && profile?.sexe === 'femme' && <LeamanBoard />}
-        {tab === '🛡️ Kanegnon' && profile?.sexe === 'homme' && <KanegnonBoard />}
+        {tab === 'Leaman' && profile?.sexe === 'femme' && <LeamanBoard />}
+        {tab === 'Kanegnon' && profile?.sexe === 'homme' && <KanegnonBoard />}
         {activeGroup && <GroupBoard groupPath={activeGroup.path} title={activeGroup.label} />}
       </main>
     </div>

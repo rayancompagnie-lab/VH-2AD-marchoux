@@ -1,0 +1,1 @@
+<p><strong>Sexe :</strong> {profile.sexe === 'femme' ? 'Femme 🌸' : profile.sexe === 'homme' ? 'Homme 🛡️' : '—'}</p>

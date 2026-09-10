@@ -43,7 +43,7 @@ export function AuthProvider({ children }) {
       nom: data.nom || '',
       prenom: data.prenom || '',
       email: data.email,
-      sexe: data.sexe || '',
+      sexe: data.sexe || '',   // 👈 NOUVEAU
       titre: data.titre || '',
       experience: data.experience || '',
       contact: data.contact || '',
@@ -64,7 +64,7 @@ export function AuthProvider({ children }) {
 
   async function completeMemberProfile(uid, data) {
     await update(ref(db, `users/${uid}`), {
-      sexe: data.sexe || '',
+      sexe: data.sexe || '',   // 👈 NOUVEAU
       titre: data.titre || '',
       experience: data.experience || '',
       contact: data.contact,

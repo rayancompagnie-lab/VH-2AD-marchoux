@@ -18,7 +18,7 @@ export default function Register() {
     prenom: '',
     email: '',
     password: '',
-    sexe: '',
+    sexe: '',              // 👈 ajouté dans l’état initial
     titre: '',
     experience: '',
     contact: '',
@@ -37,7 +37,7 @@ export default function Register() {
     e.preventDefault()
     setError('')
     if (!form.sexe) {
-      setError('Choisis ton sexe.')
+      setError('Choisis ton sexe.')   // 👈 validation ajoutée
       return
     }
     if (!form.contact) {
@@ -84,13 +84,15 @@ export default function Register() {
         <input placeholder="Nom" value={form.nom} onChange={(e) => update('nom', e.target.value)} required />
         <input placeholder="Prénom" value={form.prenom} onChange={(e) => update('prenom', e.target.value)} required />
         <input type="email" placeholder="Email" value={form.email} onChange={(e) => update('email', e.target.value)} required />
-        <PasswordField value={form.password} onChange={(e) => update('password', e.target.value)} required minLength={6} />
 
+        {/* 👇 Champ sexe ajouté juste après l’email */}
         <select value={form.sexe} onChange={(e) => update('sexe', e.target.value)} required>
           <option value="">Choisis ton sexe</option>
           <option value="homme">Homme 🛡️ (Kanegnon)</option>
           <option value="femme">Femme 🌸 (Leaman)</option>
         </select>
+
+        <PasswordField value={form.password} onChange={(e) => update('password', e.target.value)} required minLength={6} />
 
         <label className="photo-field">
           Photo de profil (obligatoire)
