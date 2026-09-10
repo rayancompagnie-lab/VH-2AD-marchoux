@@ -7,7 +7,7 @@ import {
   signOut,
   updateProfile
 } from 'firebase/auth'
-import { onValue, ref, serverTimestamp, set } from 'firebase/database'
+import { onValue, ref, serverTimestamp, set, update } from 'firebase/database'
 import { auth, db, googleProvider } from '../firebase'
 
 const AuthContext = createContext(null)
@@ -38,12 +38,12 @@ export function AuthProvider({ children }) {
     return unsubscribe
   }, [user])
 
-  // Crée la fiche membre dans la Realtime Database après inscription
   async function createMemberProfile(uid, data, complete = true) {
     await set(ref(db, `users/${uid}`), {
       nom: data.nom || '',
       prenom: data.prenom || '',
       email: data.email,
+      sexe: data.sexe || '',
       titre: data.titre || '',
       experience: data.experience || '',
       contact: data.contact || '',
@@ -54,19 +54,17 @@ export function AuthProvider({ children }) {
       statutRelationnel: data.statutRelationnel || '',
       photoPrincipale: data.photoPrincipale || '',
       photoSecondaire: data.photoSecondaire || '',
-      role: 'member', // 'member' | 'semiAdmin' | 'admin'
-      secteurs: {}, // pour les semi-admins : { actualites, infosTravail, marche, temoignages }
+      role: 'member',
+      secteurs: {},
       badges: {},
       profileComplete: complete,
       createdAt: serverTimestamp()
     })
   }
 
-  // Complète une fiche créée automatiquement via Google (le contact est obligatoire
-  // mais Google ne le fournit pas, donc l'app redirige vers /completer-profil)
   async function completeMemberProfile(uid, data) {
-    await set(ref(db, `users/${uid}`), {
-      ...profile,
+    await update(ref(db, `users/${uid}`), {
+      sexe: data.sexe || '',
       titre: data.titre || '',
       experience: data.experience || '',
       contact: data.contact,
@@ -75,6 +73,8 @@ export function AuthProvider({ children }) {
       serviceVisible: !!data.serviceVisible,
       tribu: data.tribu || '',
       statutRelationnel: data.statutRelationnel || '',
+      photoPrincipale: data.photoPrincipale || '',
+      photoSecondaire: data.photoSecondaire || '',
       profileComplete: true
     })
   }
@@ -90,8 +90,6 @@ export function AuthProvider({ children }) {
     return signInWithEmailAndPassword(auth, email, password)
   }
 
-  // Le contact étant obligatoire mais non fourni par Google, un profil "incomplet"
-  // est créé puis l'app redirige l'utilisateur vers la page de complétion.
   async function loginWithGoogle() {
     const cred = await signInWithPopup(auth, googleProvider)
     const existing = await new Promise((resolve) => {
@@ -114,9 +112,6 @@ export function AuthProvider({ children }) {
 
   const isAdminValue = profile?.role === 'admin'
 
-  // Un semi-admin ne gère que le(s) secteur(s) qui lui ont été confiés
-  // (ex: "marche", "actualites", "infosTravail", "temoignages"). Un admin
-  // gère tout automatiquement.
   function canManage(secteur) {
     return isAdminValue || !!profile?.secteurs?.[secteur]
   }

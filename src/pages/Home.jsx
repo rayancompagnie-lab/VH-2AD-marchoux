@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { onValue, ref } from 'firebase/database'
+import { get, onValue, ref } from 'firebase/database'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { TRIBUS, STATUTS, findTribu, findStatut } from '../utils/groups'
@@ -12,9 +12,20 @@ import Marketplace from '../components/Marketplace'
 import Testimonies from '../components/Testimonies'
 import PremiumBadge from '../components/PremiumBadge'
 import GroupBoard from '../components/GroupBoard'
+import LeamanBoard from '../components/LeamanBoard'
+import KanegnonBoard from '../components/KanegnonBoard'
 import MyProfile from './MyProfile'
 
-const STATIC_TABS = ['Service', 'Actualités', 'Infos travail', 'Marché', 'Témoignages', 'Direct', 'Mon profil', 'Administration']
+const STATIC_TABS = [
+  'Service',
+  'Actualités',
+  'Infos travail',
+  'Marché',
+  'Témoignages',
+  'Direct',
+  'Mon profil',
+  'Administration'
+]
 
 export default function Home() {
   const { profile, isSemiAdmin, isAdmin, isPremium, canManage, logout } = useAuth()
@@ -23,69 +34,58 @@ export default function Home() {
   const [allBadges, setAllBadges] = useState({})
 
   useEffect(() => {
-    const unsubUsers = onValue(ref(db, 'users'), (snap) => setAllUsers(snap.val() || {}))
-    const unsubBadges = onValue(ref(db, 'badges'), (snap) => setAllBadges(snap.val() || {}))
-    return () => {
-      unsubUsers()
-      unsubBadges()
+    async function loadData() {
+      try {
+        const usersSnap = await get(ref(db, 'users'))
+        setAllUsers(usersSnap.val() || {})
+        const badgesSnap = await get(ref(db, 'badges'))
+        setAllBadges(badgesSnap.val() || {})
+      } catch (err) {
+        console.error('Erreur chargement:', err)
+      }
     }
+    loadData()
   }, [])
 
-  // Calcule tous les groupes de l'application (tribus, statuts, badges)
-  // qui ont au moins 2 membres.
-  const allGroups = useMemo(() => {
+  const myGroups = useMemo(() => {
     if (!profile) return []
     const users = Object.values(allUsers)
     const groups = []
 
-    // Toutes les tribus qui ont au moins 2 membres
-    TRIBUS.forEach((t) => {
-      const count = users.filter((u) => u.tribu === t.key).length
+    if (profile.tribu) {
+      const count = users.filter((u) => u.tribu === profile.tribu).length
       if (count >= 2) {
-        groups.push({
-          path: `tribu-${t.key}`,
-          label: t.label,
-          isMine: profile.tribu === t.key
-        })
+        const t = findTribu(profile.tribu)
+        groups.push({ path: `tribu-${profile.tribu}`, label: t ? t.label : profile.tribu })
       }
-    })
+    }
 
-    // Tous les statuts qui ont au moins 2 membres
-    STATUTS.forEach((s) => {
-      const count = users.filter((u) => u.statutRelationnel === s.key).length
+    if (profile.statutRelationnel) {
+      const count = users.filter((u) => u.statutRelationnel === profile.statutRelationnel).length
       if (count >= 2) {
-        groups.push({
-          path: `statut-${s.key}`,
-          label: s.label,
-          isMine: profile.statutRelationnel === s.key
-        })
+        const s = findStatut(profile.statutRelationnel)
+        groups.push({ path: `statut-${profile.statutRelationnel}`, label: s ? s.label : profile.statutRelationnel })
       }
-    })
+    }
 
-    // Tous les badges qui ont au moins 2 membres
-    Object.keys(allBadges).forEach((badgeId) => {
+    Object.keys(profile.badges || {}).forEach((badgeId) => {
       const count = users.filter((u) => u.badges?.[badgeId]).length
       if (count >= 2) {
-        groups.push({
-          path: `badge-${badgeId}`,
-          label: allBadges[badgeId]?.name || 'Badge',
-          isMine: !!profile.badges?.[badgeId]
-        })
+        groups.push({ path: `badge-${badgeId}`, label: allBadges[badgeId]?.name || 'Badge' })
       }
     })
 
     return groups
   }, [profile, allUsers, allBadges])
 
-  // Un admin voit TOUS les groupes, un membre ne voit que les siens.
-  const visibleGroups = isAdmin ? allGroups : allGroups.filter((g) => g.isMine)
-
   const visibleTabs = [
     ...STATIC_TABS.filter((t) => t !== 'Administration' || isAdmin),
-    ...visibleGroups.map((g) => g.label)
+    ...(profile?.sexe === 'femme' ? ['🌸 Leaman'] : []),
+    ...(profile?.sexe === 'homme' ? ['🛡️ Kanegnon'] : []),
+    ...myGroups.map((g) => g.label)
   ]
 
-  const activeGroup = visibleGroups.find((g) => g.label === tab)
+  const activeGroup = myGroups.find((g) => g.label === tab)
 
   return (
     <div className="home">
@@ -145,6 +145,9 @@ export default function Home() {
         {tab === 'Mon profil' && <MyProfile />}
 
         {tab === 'Administration' && isAdmin && <AdminPanel />}
+
+        {tab === '🌸 Leaman' && profile?.sexe === 'femme' && <LeamanBoard />}
+        {tab === '🛡️ Kanegnon' && profile?.sexe === 'homme' && <KanegnonBoard />}
 
         {activeGroup && <GroupBoard groupPath={activeGroup.path} title={activeGroup.label} />}
       </main>

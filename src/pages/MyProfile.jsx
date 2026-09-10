@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { ref, set } from 'firebase/database'
+import { ref, update } from 'firebase/database'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { fileToResizedBase64 } from '../utils/images'
 import { normalizeIvorianPhone } from '../utils/phone'
 import { findTribu, findStatut } from '../utils/groups'
-import PremiumBadge from '../components/PremiumBadge'
+import PremiumBadge from './PremiumBadge'
 
 export default function MyProfile() {
   const { user, profile } = useAuth()
@@ -23,7 +23,7 @@ export default function MyProfile() {
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
 
-  function update(field, value) {
+  function updateField(field, value) {
     setForm((f) => ({ ...f, [field]: value }))
     setSaved(false)
   }
@@ -37,9 +37,13 @@ export default function MyProfile() {
     }
     setSending(true)
     try {
-      const photoPrincipale = newPhoto1 ? await fileToResizedBase64(newPhoto1) : profile.photoPrincipale
-      const photoSecondaire = newPhoto2 ? await fileToResizedBase64(newPhoto2) : profile.photoSecondaire
-      await set(ref(db, `users/${user.uid}`), { ...profile, ...form, contact: normalizeIvorianPhone(form.contact), photoPrincipale, photoSecondaire })
+      const payload = {
+        ...form,
+        contact: normalizeIvorianPhone(form.contact)
+      }
+      if (newPhoto1) payload.photoPrincipale = await fileToResizedBase64(newPhoto1)
+      if (newPhoto2) payload.photoSecondaire = await fileToResizedBase64(newPhoto2)
+      await update(ref(db, `users/${user.uid}`), payload)
       setSaved(true)
       setNewPhoto1(null)
       setNewPhoto2(null)
@@ -61,6 +65,9 @@ export default function MyProfile() {
         {profile.photoPrincipale && <img src={profile.photoPrincipale} alt="Ma photo" className="profile-avatar" />}
         <p><strong>{profile.prenom} {profile.nom}</strong></p>
         <p className="muted">{profile.email}</p>
+        <p className="muted">
+          {profile.sexe === 'femme' ? '🌸 Femme' : profile.sexe === 'homme' ? '🛡️ Homme' : '—'}
+        </p>
         <div className="badges">
           <PremiumBadge show={premium} canRequest={!premium} name={`${profile.prenom} ${profile.nom}`} />
           {tribu && <span className="badge-pill" style={{ background: tribu.color }}>{tribu.label}</span>}
@@ -81,14 +88,14 @@ export default function MyProfile() {
           <input type="file" accept="image/*" onChange={(e) => setNewPhoto2(e.target.files[0] || null)} />
         </label>
 
-        <input placeholder="Titre / responsabilité (facultatif)" value={form.titre} onChange={(e) => update('titre', e.target.value)} />
-        <input placeholder="Travail ou expérience (facultatif)" value={form.experience} onChange={(e) => update('experience', e.target.value)} />
-        <input placeholder="Contact WhatsApp (obligatoire), ex: 0102030405" value={form.contact} onChange={(e) => update('contact', e.target.value)} required />
-        <input placeholder="Lieu d'habitation (facultatif)" value={form.lieuHabitation} onChange={(e) => update('lieuHabitation', e.target.value)} />
+        <input placeholder="Titre / responsabilité (facultatif)" value={form.titre} onChange={(e) => updateField('titre', e.target.value)} />
+        <input placeholder="Travail ou expérience (facultatif)" value={form.experience} onChange={(e) => updateField('experience', e.target.value)} />
+        <input placeholder="Contact WhatsApp (obligatoire), ex: 0102030405" value={form.contact} onChange={(e) => updateField('contact', e.target.value)} required />
+        <input placeholder="Lieu d'habitation (facultatif)" value={form.lieuHabitation} onChange={(e) => updateField('lieuHabitation', e.target.value)} />
 
         <label className="field-with-toggle">
-          <input placeholder="Mon service" value={form.service} onChange={(e) => update('service', e.target.value)} />
-          <span><input type="checkbox" checked={form.serviceVisible} onChange={(e) => update('serviceVisible', e.target.checked)} /> Apparaître dans l'annuaire des services</span>
+          <input placeholder="Mon service" value={form.service} onChange={(e) => updateField('service', e.target.value)} />
+          <span><input type="checkbox" checked={form.serviceVisible} onChange={(e) => updateField('serviceVisible', e.target.checked)} /> Apparaître dans l'annuaire des services</span>
         </label>
 
         <button type="submit" disabled={sending}>{sending ? 'Enregistrement...' : 'Enregistrer'}</button>

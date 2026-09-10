@@ -18,6 +18,7 @@ export default function Register() {
     prenom: '',
     email: '',
     password: '',
+    sexe: '',
     titre: '',
     experience: '',
     contact: '',
@@ -35,6 +36,10 @@ export default function Register() {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
+    if (!form.sexe) {
+      setError('Choisis ton sexe.')
+      return
+    }
     if (!form.contact) {
       setError('Le contact est obligatoire.')
       return
@@ -55,7 +60,12 @@ export default function Register() {
     try {
       const photoPrincipale = await fileToResizedBase64(photo1)
       const photoSecondaire = photo2 ? await fileToResizedBase64(photo2) : ''
-      await registerWithEmail({ ...form, contact: normalizeIvorianPhone(form.contact), photoPrincipale, photoSecondaire })
+      await registerWithEmail({
+        ...form,
+        contact: normalizeIvorianPhone(form.contact),
+        photoPrincipale,
+        photoSecondaire
+      })
       navigate('/')
     } catch (err) {
       setError("Impossible de créer le compte (email déjà utilisé ou mot de passe trop court).")
@@ -75,6 +85,12 @@ export default function Register() {
         <input placeholder="Prénom" value={form.prenom} onChange={(e) => update('prenom', e.target.value)} required />
         <input type="email" placeholder="Email" value={form.email} onChange={(e) => update('email', e.target.value)} required />
         <PasswordField value={form.password} onChange={(e) => update('password', e.target.value)} required minLength={6} />
+
+        <select value={form.sexe} onChange={(e) => update('sexe', e.target.value)} required>
+          <option value="">Choisis ton sexe</option>
+          <option value="homme">Homme 🛡️ (Kanegnon)</option>
+          <option value="femme">Femme 🌸 (Leaman)</option>
+        </select>
 
         <label className="photo-field">
           Photo de profil (obligatoire)

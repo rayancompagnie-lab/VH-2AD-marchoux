@@ -13,6 +13,7 @@ export default function CompleteProfile() {
   const [photo1, setPhoto1] = useState(null)
   const [photo2, setPhoto2] = useState(null)
   const [form, setForm] = useState({
+    sexe: '',
     titre: '',
     experience: '',
     contact: '',
@@ -29,6 +30,10 @@ export default function CompleteProfile() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (!form.sexe) {
+      setError('Choisis ton sexe.')
+      return
+    }
     if (!form.contact) {
       setError('Le contact est obligatoire.')
       return
@@ -49,7 +54,12 @@ export default function CompleteProfile() {
     try {
       const photoPrincipale = await fileToResizedBase64(photo1)
       const photoSecondaire = photo2 ? await fileToResizedBase64(photo2) : ''
-      await completeMemberProfile(user.uid, { ...form, contact: normalizeIvorianPhone(form.contact), photoPrincipale, photoSecondaire })
+      await completeMemberProfile(user.uid, {
+        ...form,
+        contact: normalizeIvorianPhone(form.contact),
+        photoPrincipale,
+        photoSecondaire
+      })
       navigate('/')
     } finally {
       setSending(false)
@@ -62,6 +72,12 @@ export default function CompleteProfile() {
       <p>Complète ta fiche membre avant de continuer.</p>
       <form onSubmit={handleSubmit} className="auth-form">
         {error && <p className="error">{error}</p>}
+
+        <select value={form.sexe} onChange={(e) => update('sexe', e.target.value)} required>
+          <option value="">Choisis ton sexe</option>
+          <option value="homme">Homme 🛡️ (Kanegnon)</option>
+          <option value="femme">Femme 🌸 (Leaman)</option>
+        </select>
 
         <label className="photo-field">
           Photo de profil (obligatoire)
