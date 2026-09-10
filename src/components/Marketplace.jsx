@@ -2,18 +2,22 @@ import { useEffect, useState } from 'react'
 import { onValue, push, ref, remove, set } from 'firebase/database'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
+import { fileToResizedBase64, isImageTooLarge } from '../utils/images'
 import { PREMIUM_WHATSAPP, toWhatsappLink } from '../utils/whatsapp'
 import PremiumBadge from './PremiumBadge'
 import Avatar from './Avatar'
 
 const FREE_LIMIT = 5
 const PREMIUM_LIMIT = 20
+const MAX_IMAGES = 2
+const MAX_IMAGE_KO = 200 // 200 Ko max par image après compression
 
 export default function Marketplace() {
   const { user, profile, isPremium, canManage } = useAuth()
   const [articles, setArticles] = useState([])
   const [titre, setTitre] = useState('')
   const [description, setDescription] = useState('')
+  const [images, setImages] = useState([])
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
 
@@ -40,6 +44,35 @@ export default function Marketplace() {
   const limit = isPremium ? PREMIUM_LIMIT : FREE_LIMIT
   const reachedLimit = myArticles.length >= limit
 
+  async function handleImagesChange(e) {
+    setError('')
+    const files = Array.from(e.target.files).slice(0, MAX_IMAGES)
+
+    try {
+      const base64s = await Promise.all(
+        files.map((f) => fileToResizedBase64(f, 800, 0.7))
+      )
+
+      // Vérifier la taille de chaque image
+      for (const b64 of base64s) {
+        if (isImageTooLarge(b64, MAX_IMAGE_KO)) {
+          setError(`Une image est trop lourde (max ${MAX_IMAGE_KO} Ko). Choisis une image plus simple.`)
+          setImages([])
+          return
+        }
+      }
+
+      setImages(base64s)
+    } catch (err) {
+      setError('Impossible de traiter les images : ' + err.message)
+      setImages([])
+    }
+  }
+
+  function removeImage(index) {
+    setImages((arr) => arr.filter((_, i) => i !== index))
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
@@ -59,10 +92,12 @@ export default function Marketplace() {
         authorPremium: isPremium,
         titre,
         description,
+        images: images.length > 0 ? images : null,
         createdAt: Date.now()
       })
       setTitre('')
       setDescription('')
+      setImages([])
     } catch (err) {
       setError('Échec de la publication : ' + err.message)
     } finally {
@@ -88,6 +123,59 @@ export default function Marketplace() {
           {error && <p className="error">{error}</p>}
           <input placeholder="Titre de l'article" value={titre} onChange={(e) => setTitre(e.target.value)} />
           <textarea placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
+
+          <label className="photo-field">
+            Ajoute jusqu'à {MAX_IMAGES} photo(s) — elles seront compressées automatiquement
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImagesChange}
+              disabled={images.length >= MAX_IMAGES}
+            />
+          </label>
+
+          {images.length > 0 && (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
+              {images.map((img, i) => (
+                <div key={i} style={{ position: 'relative' }}>
+                  <img
+                    src={img}
+                    alt={`Aperçu ${i + 1}`}
+                    style={{
+                      width: 80,
+                      height: 80,
+                      objectFit: 'cover',
+                      borderRadius: 8,
+                      border: '2px solid var(--color-gold)'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(i)}
+                    title="Retirer cette image"
+                    style={{
+                      position: 'absolute',
+                      top: -6,
+                      right: -6,
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      background: 'var(--color-crimson)',
+                      color: 'white',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      lineHeight: 1
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           <p className="muted-small">
             {myArticles.length}/{limit} articles publiés {isPremium && <PremiumBadge show />}
           </p>
@@ -120,6 +208,13 @@ export default function Marketplace() {
         {articles.length === 0 && <p>Aucun article publié pour le moment.</p>}
         {articles.map((a) => (
           <div key={a.id} className="market-card-large">
+            {a.images && a.images.length > 0 && (
+              <div className="market-gallery">
+                {a.images.map((img, i) => (
+                  <img key={i} src={img} alt={a.titre} className="market-image-large" />
+                ))}
+              </div>
+            )}
             <div className="market-card-body">
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                 <Avatar avatarId={a.authorAvatarId} size={40} name={a.authorName} />

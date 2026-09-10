@@ -94,7 +94,10 @@
       ".read": "auth != null",
       ".write": "auth != null",
       "$articleId": {
-        ".validate": "newData.hasChildren(['authorUid', 'titre', 'description', 'createdAt'])"
+        ".validate": "newData.hasChildren(['authorUid', 'titre', 'description', 'createdAt'])",
+        "images": {
+          ".validate": "newData.isString() || newData.hasChildren() || newData.val() === null"
+        }
       }
     },
 
