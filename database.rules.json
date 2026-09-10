@@ -1,99 +1,121 @@
 {
   "rules": {
-    ".read": false,
-    ".write": false,
-
+    // ─── DONNÉES PUBLIQUES (lecture pour tous, écriture admin seulement) ───
+    "products": {
+      ".read": true,
+      ".write": "auth != null && auth.token.email === 'ra@gmail.com'",
+      ".indexOn": ["category", "name"]
+    },
+    
+    "disciplines": {
+      ".read": true,
+      ".write": "auth != null && auth.token.email === 'ra@gmail.com'"
+    },
+    
+    // ─── ADMINS ───
+    "admins": {
+      ".read": "auth != null && auth.token.email === 'ra@gmail.com'",
+      ".write": "auth != null && auth.token.email === 'ra@gmail.com'",
+      
+      // Exemple : liste des UIDs admin
+      // "abc123uid": true
+    },
+    
+    // ─── UTILISATEURS ───
     "users": {
-      ".read": "auth != null",
       "$uid": {
-        ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
-        "role": {
-          ".write": "(!data.exists() && newData.val() === 'member') || root.child('users').child(auth.uid).child('role').val() === 'admin'"
+        // Chaque utilisateur peut lire/écrire son propre profil
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        
+        // Validation des données utilisateur
+        "name": {
+          ".validate": "newData.isString() && newData.val().length <= 50"
         },
-        "premium": {
-          ".write": "!data.exists() || root.child('users').child(auth.uid).child('role').val() === 'admin'"
+        "email": {
+          ".validate": "newData.isString() && newData.val().matches(/^[^@]+@[^@]+\\.[^@]+$/)"
         },
-        "secteurs": {
-          ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
+        "phone": {
+          ".validate": "newData.isString() && newData.val().length <= 20"
         },
-        "badges": {
-          ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'semiAdmin'"
+        "isAdmin": {
+          ".validate": false  // Seul le serveur peut définir ce champ
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber()"
         }
       }
     },
-
-    "badges": {
-      ".read": "auth != null",
-      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'semiAdmin')"
-    },
-
-    "posts": {
-      "culte": {
-        ".read": "auth != null",
-        "$postId": {
-          ".write": "auth != null && (!data.exists() ? (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('secteurs').child('actualites').val() === true) : (data.child('authorUid').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('secteurs').child('actualites').val() === true))",
-          "reactions": {
-            "$emoji": {
-              "$uid": {
-                ".write": "auth != null && auth.uid === $uid"
-              }
-            }
-          }
-        }
-      },
-      "travail": {
-        ".read": "auth != null",
-        "$postId": {
-          ".write": "auth != null && (!data.exists() ? (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('secteurs').child('infosTravail').val() === true) : (data.child('authorUid').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('secteurs').child('infosTravail').val() === true))",
-          "reactions": {
-            "$emoji": {
-              "$uid": {
-                ".write": "auth != null && auth.uid === $uid"
-              }
-            }
-          }
+    
+    // ─── COMMANDES ───
+    "orders": {
+      ".read": "auth != null && auth.token.email === 'ra@gmail.com'",
+      ".write": "auth != null",
+      
+      "$orderId": {
+        ".validate": "newData.hasChildren(['userId', 'items', 'total', 'createdAt'])",
+        
+        "userId": {
+          ".validate": "newData.isString() && newData.val() === auth.uid"
+        },
+        "items": {
+          ".validate": "newData.hasChildren()"
+        },
+        "total": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "status": {
+          ".validate": "newData.isString() && newData.val().matches(/^(pending|confirmed|delivered|cancelled)$/)"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "userName": {
+          ".validate": "newData.isString() && newData.val().length <= 50"
+        },
+        "userPhone": {
+          ".validate": "newData.isString() && newData.val().length <= 20"
         }
       }
     },
-
-    "liveSessions": {
-      ".read": "auth != null",
-      "current": {
-        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || !data.exists())",
-        "listeners": {
-          "$uid": {
-            ".write": "auth != null && auth.uid === $uid"
-          }
+    
+    // ─── PANIERS (optionnel - si tu veux sync panier) ───
+    "carts": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    
+    // ─── NOTIFICATIONS / MESSAGES ───
+    "messages": {
+      ".read": "auth != null && auth.token.email === 'ra@gmail.com'",
+      ".write": "auth != null",
+      
+      "$msgId": {
+        ".validate": "newData.hasChildren(['from', 'text', 'createdAt'])",
+        "from": {
+          ".validate": "newData.val() === auth.uid"
+        },
+        "text": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 1000"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber()"
         }
       }
     },
-
-    "marche": {
-      ".read": "auth != null",
-      "$articleId": {
-        ".write": "auth != null && (!data.exists() || data.child('authorUid').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('secteurs').child('marche').val() === true)"
-      }
+    
+    // ─── STATS / ANALYTICS ───
+    "stats": {
+      ".read": "auth != null && auth.token.email === 'ra@gmail.com'",
+      ".write": "auth != null && auth.token.email === 'ra@gmail.com'"
     },
-
-    "temoignages": {
-      ".read": "auth != null",
-      "$temoignageId": {
-        ".write": "auth != null && (!data.exists() || data.child('authorUid').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('secteurs').child('temoignages').val() === true)"
-      }
-    },
-
-    "groupes": {
-      "$groupPath": {
-        ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || ($groupPath === 'leaman' && root.child('users').child(auth.uid).child('sexe').val() === 'femme') || ($groupPath === 'kanegnon' && root.child('users').child(auth.uid).child('sexe').val() === 'homme') || ($groupPath.beginsWith('tribu-') && root.child('users').child(auth.uid).child('tribu').val() === $groupPath.replace('tribu-', '')) || ($groupPath.beginsWith('statut-') && root.child('users').child(auth.uid).child('statutRelationnel').val() === $groupPath.replace('statut-', '')) || ($groupPath.beginsWith('badge-') && root.child('users').child(auth.uid).child('badges').child($groupPath.replace('badge-', '')).val() === true))",
-        "$postId": {
-          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || data.child('authorUid').val() === auth.uid || (!data.exists() && (($groupPath === 'leaman' && root.child('users').child(auth.uid).child('sexe').val() === 'femme') || ($groupPath === 'kanegnon' && root.child('users').child(auth.uid).child('sexe').val() === 'homme') || ($groupPath.beginsWith('tribu-') && root.child('users').child(auth.uid).child('tribu').val() === $groupPath.replace('tribu-', '')) || ($groupPath.beginsWith('statut-') && root.child('users').child(auth.uid).child('statutRelationnel').val() === $groupPath.replace('statut-', '')) || ($groupPath.beginsWith('badge-') && root.child('users').child(auth.uid).child('badges').child($groupPath.replace('badge-', '')).val() === true))))"
-        }
-      }
-    },
-
-    "config": {
-      ".read": "auth != null",
-      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+    
+    // ─── BLOQUER TOUT LE RESTE ───
+    "$other": {
+      ".read": false,
+      ".write": false
     }
   }
 }
