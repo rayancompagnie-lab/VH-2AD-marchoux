@@ -86,14 +86,14 @@
       "$groupPath": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || ($groupPath === 'leaman' && root.child('users').child(auth.uid).child('sexe').val() === 'femme') || ($groupPath === 'kanegnon' && root.child('users').child(auth.uid).child('sexe').val() === 'homme') || ($groupPath.beginsWith('tribu-') && root.child('users').child(auth.uid).child('tribu').val() === $groupPath.replace('tribu-', '')) || ($groupPath.beginsWith('statut-') && root.child('users').child(auth.uid).child('statutRelationnel').val() === $groupPath.replace('statut-', '')) || ($groupPath.beginsWith('badge-') && root.child('users').child(auth.uid).child('badges').child($groupPath.replace('badge-', '')).val() === true))",
         "$postId": {
-          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || data.child('authorUid').val() === auth.uid || (!data.exists() && (($groupPath === 'leaman' && root.child('users').child(auth.uid).child('sexe').val() === 'femme') || ($groupPath === 'kanegnon' && root.child('users').child(auth.uid).child('sexe').val() === 'homme') || ($groupPath.beginsWith('tribu-') && root.child('users').child(auth.uid).child('tribu').val() === $groupPath.replace('tribu-', '')) || ($groupPath.beginsWith('statut-') && root.child('users').child(auth.uid).child('
-              "groupes": {
-      "$groupPath": {
-        ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || ($groupPath === 'leaman' && root.child('users').child(auth.uid).child('sexe').val() === 'femme') || ($groupPath === 'kanegnon' && root.child('users').child(auth.uid).child('sexe').val() === 'homme') || ($groupPath.beginsWith('tribu-') && root.child('users').child(auth.uid).child('tribu').val() === $groupPath.replace('tribu-', '')) || ($groupPath.beginsWith('statut-') && root.child('users').child(auth.uid).child('statutRelationnel').val() === $groupPath.replace('statut-', '')) || ($groupPath.beginsWith('badge-') && root.child('users').child(auth.uid).child('badges').child($groupPath.replace('badge-', '')).val() === true))",
-        "$postId": {
           ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || data.child('authorUid').val() === auth.uid || (!data.exists() && (($groupPath === 'leaman' && root.child('users').child(auth.uid).child('sexe').val() === 'femme') || ($groupPath === 'kanegnon' && root.child('users').child(auth.uid).child('sexe').val() === 'homme') || ($groupPath.beginsWith('tribu-') && root.child('users').child(auth.uid).child('tribu').val() === $groupPath.replace('tribu-', '')) || ($groupPath.beginsWith('statut-') && root.child('users').child(auth.uid).child('statutRelationnel').val() === $groupPath.replace('statut-', '')) || ($groupPath.beginsWith('badge-') && root.child('users').child(auth.uid).child('badges').child($groupPath.replace('badge-', '')).val() === true))))"
         }
       }
+    },
+
+    "config": {
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
     }
   }
 }
