@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { get, onValue, ref } from 'firebase/database'
+import { get, ref } from 'firebase/database'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { TRIBUS, STATUTS, findTribu, findStatut } from '../utils/groups'
@@ -15,6 +15,8 @@ import GroupBoard from '../components/GroupBoard'
 import LeamanBoard from '../components/LeamanBoard'
 import KanegnonBoard from '../components/KanegnonBoard'
 import MyProfile from './MyProfile'
+import Attendance from './Attendance'                  // 👈 NOUVEAU
+import AttendanceReport from '../components/AttendanceReport' // 👈 NOUVEAU
 
 const STATIC_TABS = [
   'Service',
@@ -22,8 +24,10 @@ const STATIC_TABS = [
   'Infos travail',
   'Marché',
   'Témoignages',
+  'Présence',         // 👈 NOUVEAU
   'Direct',
   'Mon profil',
+  'Rapport de présence',   // 👈 NOUVEAU (admin seulement)
   'Administration'
 ]
 
@@ -79,7 +83,11 @@ export default function Home() {
   }, [profile, allUsers, allBadges])
 
   const visibleTabs = [
-    ...STATIC_TABS.filter((t) => t !== 'Administration' || isAdmin),
+    ...STATIC_TABS.filter((t) => {
+      if (t === 'Administration' && !isAdmin) return false
+      if (t === 'Rapport de présence' && !isAdmin) return false
+      return true
+    }),
     ...(profile?.sexe === 'femme' ? ['🌸 Leaman'] : []),
     ...(profile?.sexe === 'homme' ? ['🛡️ Kanegnon'] : []),
     ...myGroups.map((g) => g.label)
@@ -137,18 +145,14 @@ export default function Home() {
         )}
 
         {tab === 'Marché' && <Marketplace />}
-
         {tab === 'Témoignages' && <Testimonies />}
-
+        {tab === 'Présence' && <Attendance />}               {/* 👈 NOUVEAU */}
         {tab === 'Direct' && <LiveAudio />}
-
         {tab === 'Mon profil' && <MyProfile />}
-
+        {tab === 'Rapport de présence' && isAdmin && <AttendanceReport />} {/* 👈 NOUVEAU */}
         {tab === 'Administration' && isAdmin && <AdminPanel />}
-
         {tab === '🌸 Leaman' && profile?.sexe === 'femme' && <LeamanBoard />}
         {tab === '🛡️ Kanegnon' && profile?.sexe === 'homme' && <KanegnonBoard />}
-
         {activeGroup && <GroupBoard groupPath={activeGroup.path} title={activeGroup.label} />}
       </main>
     </div>
