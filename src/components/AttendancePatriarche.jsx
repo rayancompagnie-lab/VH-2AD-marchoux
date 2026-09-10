@@ -3,6 +3,7 @@ import { onValue, ref, set, update } from 'firebase/database'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { isPointageOpen } from '../utils/attendance'
+import Avatar from './Avatar'
 
 export default function AttendancePatriarche({ culteKey, culteLabel, todayKey, todayData }) {
   const { user, profile } = useAuth()
@@ -13,7 +14,6 @@ export default function AttendancePatriarche({ culteKey, culteLabel, todayKey, t
   const closedByAdmin = todayData?.[culteKey]?.closed === true
   const openCheck = isPointageOpen(new Date(), closedByAdmin)
 
-  // Charge tous les membres de ma tribu
   useEffect(() => {
     if (!tribu) return
     const unsub = onValue(ref(db, 'users'), (snap) => {
@@ -33,11 +33,11 @@ export default function AttendancePatriarche({ culteKey, culteLabel, todayKey, t
 
   const pointages = todayData?.[culteKey]?.[tribu] || {}
 
-  async function confirmMember(uid, name, photo) {
+  async function confirmMember(uid, name, avatarId) {
     await set(ref(db, `attendance/${todayKey}/${culteKey}/${tribu}/${uid}`), {
       uid,
       name,
-      photo: photo || '',
+      avatarId: avatarId || '',
       status: 'present',
       rejected: false,
       markedAt: Date.now(),
@@ -56,11 +56,11 @@ export default function AttendancePatriarche({ culteKey, culteLabel, todayKey, t
     })
   }
 
-  async function markAbsent(uid, name, photo) {
+  async function markAbsent(uid, name, avatarId) {
     await set(ref(db, `attendance/${todayKey}/${culteKey}/${tribu}/${uid}`), {
       uid,
       name,
-      photo: photo || '',
+      avatarId: avatarId || '',
       status: 'absent',
       rejected: false,
       markedAt: Date.now(),
@@ -96,18 +96,7 @@ export default function AttendancePatriarche({ culteKey, culteLabel, todayKey, t
                 borderBottom: '1px solid #eee7d5'
               }}
             >
-              {m.photoPrincipale ? (
-                <img src={m.photoPrincipale} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
-              ) : (
-                <div style={{
-                  width: 32, height: 32, borderRadius: '50%',
-                  background: 'var(--color-teal)', color: 'white',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontWeight: 'bold', fontSize: 14
-                }}>
-                  {(m.prenom || '?').charAt(0).toUpperCase()}
-                </div>
-              )}
+              <Avatar avatarId={m.avatarId} size={32} name={m.prenom} />
               <span style={{ flex: 1, fontSize: 14 }}>
                 {m.prenom} {m.nom}
                 {status === 'present' && !p.rejected && <em style={{ color: 'var(--color-green)' }}> ✅ Présent</em>}
@@ -119,7 +108,7 @@ export default function AttendancePatriarche({ culteKey, culteLabel, todayKey, t
                 <div style={{ display: 'flex', gap: 4 }}>
                   {status !== 'present' && (
                     <button
-                      onClick={() => confirmMember(m.uid, `${m.prenom} ${m.nom}`, m.photoPrincipale)}
+                      onClick={() => confirmMember(m.uid, `${m.prenom} ${m.nom}`, m.avatarId)}
                       title="Marquer présent"
                       style={{ background: 'var(--color-green)', color: 'white', border: 'none', padding: '4px 10px', borderRadius: 6, cursor: 'pointer' }}
                     >
@@ -128,7 +117,7 @@ export default function AttendancePatriarche({ culteKey, culteLabel, todayKey, t
                   )}
                   {status !== 'absent' && (
                     <button
-                      onClick={() => markAbsent(m.uid, `${m.prenom} ${m.nom}`, m.photoPrincipale)}
+                      onClick={() => markAbsent(m.uid, `${m.prenom} ${m.nom}`, m.avatarId)}
                       title="Marquer absent"
                       style={{ background: 'var(--color-crimson)', color: 'white', border: 'none', padding: '4px 10px', borderRadius: 6, cursor: 'pointer' }}
                     >

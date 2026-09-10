@@ -2,14 +2,16 @@ import { useState } from 'react'
 import { ref, update } from 'firebase/database'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
-import { fileToResizedBase64 } from '../utils/images'
 import { normalizeIvorianPhone } from '../utils/phone'
 import { findTribu, findStatut } from '../utils/groups'
-import PremiumBadge from '../components/PremiumBadge'   // ✅ corrigé
+import PremiumBadge from '../components/PremiumBadge'
+import Avatar from '../components/Avatar'
+import AvatarPicker from '../components/AvatarPicker'
 
 export default function MyProfile() {
   const { user, profile } = useAuth()
   const [form, setForm] = useState({
+    avatarId: profile?.avatarId || '',
     titre: profile?.titre || '',
     experience: profile?.experience || '',
     contact: profile?.contact || '',
@@ -17,8 +19,6 @@ export default function MyProfile() {
     service: profile?.service || '',
     serviceVisible: !!profile?.serviceVisible
   })
-  const [newPhoto1, setNewPhoto1] = useState(null)
-  const [newPhoto2, setNewPhoto2] = useState(null)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
@@ -35,18 +35,17 @@ export default function MyProfile() {
       setError('Le contact est obligatoire.')
       return
     }
+    if (!form.avatarId) {
+      setError('Choisis un avatar.')
+      return
+    }
     setSending(true)
     try {
-      const payload = {
+      await update(ref(db, `users/${user.uid}`), {
         ...form,
         contact: normalizeIvorianPhone(form.contact)
-      }
-      if (newPhoto1) payload.photoPrincipale = await fileToResizedBase64(newPhoto1)
-      if (newPhoto2) payload.photoSecondaire = await fileToResizedBase64(newPhoto2)
-      await update(ref(db, `users/${user.uid}`), payload)
+      })
       setSaved(true)
-      setNewPhoto1(null)
-      setNewPhoto2(null)
     } finally {
       setSending(false)
     }
@@ -62,7 +61,9 @@ export default function MyProfile() {
     <div className="my-profile">
       <h2>Mon profil</h2>
       <div className="profile-summary">
-        {profile.photoPrincipale && <img src={profile.photoPrincipale} alt="Ma photo" className="profile-avatar" />}
+        <div style={{ marginBottom: 8 }}>
+          <Avatar avatarId={form.avatarId || profile.avatarId} size={84} name={profile.prenom} />
+        </div>
         <p><strong>{profile.prenom} {profile.nom}</strong></p>
         <p className="muted">{profile.email}</p>
         <p className="muted">
@@ -79,14 +80,11 @@ export default function MyProfile() {
         {error && <p className="error">{error}</p>}
         {saved && <p className="success">Profil mis à jour.</p>}
 
-        <label className="photo-field">
-          Changer ma photo principale
-          <input type="file" accept="image/*" onChange={(e) => setNewPhoto1(e.target.files[0] || null)} />
-        </label>
-        <label className="photo-field">
-          Changer ma deuxième photo
-          <input type="file" accept="image/*" onChange={(e) => setNewPhoto2(e.target.files[0] || null)} />
-        </label>
+        <AvatarPicker
+          sexe={profile.sexe}
+          value={form.avatarId}
+          onChange={(id) => updateField('avatarId', id)}
+        />
 
         <input placeholder="Titre / responsabilité (facultatif)" value={form.titre} onChange={(e) => updateField('titre', e.target.value)} />
         <input placeholder="Travail ou expérience (facultatif)" value={form.experience} onChange={(e) => updateField('experience', e.target.value)} />

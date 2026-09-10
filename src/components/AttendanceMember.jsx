@@ -11,7 +11,7 @@ export default function AttendanceMember({ culteKey, culteLabel, todayKey, today
 
   const tribu = profile?.tribu
   const myPointage = todayData?.[culteKey]?.[tribu]?.[user?.uid]
-  const status = myPointage?.status // "present" | "absent" | undefined
+  const status = myPointage?.status
   const rejected = myPointage?.rejected
 
   const closedByAdmin = todayData?.[culteKey]?.closed === true
@@ -32,9 +32,9 @@ export default function AttendanceMember({ culteKey, culteLabel, todayKey, today
       await set(ref(db, `attendance/${todayKey}/${culteKey}/${tribu}/${user.uid}`), {
         uid: user.uid,
         name: `${profile.prenom || ''} ${profile.nom || ''}`.trim(),
-        photo: profile.photoPrincipale || '',
-        status: choice,          // "present" | "absent"
-        rejected: false,          // Le patriarche n'a pas encore rejeté
+        avatarId: profile.avatarId || '',
+        status: choice,
+        rejected: false,
         markedAt: Date.now(),
         markedBy: user.uid
       })

@@ -3,6 +3,7 @@ import { onValue, push, ref, remove, set } from 'firebase/database'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { cleanupExpiredPosts, computeExpiresAt, isExpired } from '../utils/ttl'
+import Avatar from './Avatar'
 
 const EXTEND_HOURS = 24
 
@@ -44,6 +45,7 @@ export default function GroupBoard({ groupPath, title }) {
       await set(newRef, {
         authorUid: user.uid,
         authorName: `${profile?.prenom || ''} ${profile?.nom || ''}`.trim(),
+        authorAvatarId: profile?.avatarId || '',
         content: text,
         createdAt: Date.now(),
         expiresAt: computeExpiresAt({ durationHours: 24 })
@@ -82,10 +84,13 @@ export default function GroupBoard({ groupPath, title }) {
         {posts.map((post) => (
           <div key={post.id} className="post-card">
             <div className="post-header">
-              <strong>{post.authorName}</strong>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Avatar avatarId={post.authorAvatarId} size={32} name={post.authorName} />
+                <strong>{post.authorName}</strong>
+              </div>
               {post.expiresAt && <span className="expiry">expire le {new Date(post.expiresAt).toLocaleString('fr-FR')}</span>}
             </div>
-            <p>{post.content}</p>
+            <p style={{ whiteSpace: 'pre-wrap' }}>{post.content}</p>
             <div className="testimony-actions">
               {(post.authorUid === user?.uid || isAdmin) && (
                 <button className="contact-btn" onClick={() => extend(post)}>⏳ Prolonger 24h</button>

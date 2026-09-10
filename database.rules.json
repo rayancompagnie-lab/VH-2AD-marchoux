@@ -24,6 +24,7 @@
         "prenom": { ".validate": "newData.isString() && newData.val().length <= 50" },
         "email": { ".validate": "newData.isString() && newData.val().matches(/^[^@]+@[^@]+\\.[^@]+$/)" },
         "sexe": { ".validate": "newData.val() === 'homme' || newData.val() === 'femme' || newData.val() === ''" },
+        "avatarId": { ".validate": "newData.isString() && newData.val().length <= 30" },
         "contact": { ".validate": "newData.isString() && newData.val().length <= 20" },
         "titre": { ".validate": "newData.isString() && newData.val().length <= 100" },
         "experience": { ".validate": "newData.isString() && newData.val().length <= 500" },
@@ -32,12 +33,22 @@
         "serviceVisible": { ".validate": "newData.isBoolean()" },
         "tribu": { ".validate": "newData.isString()" },
         "statutRelationnel": { ".validate": "newData.isString()" },
-        "photoPrincipale": { ".validate": "newData.isString()" },
-        "photoSecondaire": { ".validate": "newData.isString()" },
         "role": { ".validate": "newData.val() === 'member' || newData.val() === 'semiAdmin' || newData.val() === 'admin'" },
         "premium": { ".validate": "newData.isBoolean()" },
         "profileComplete": { ".validate": "newData.isBoolean()" },
         "createdAt": { ".validate": "newData.isNumber() || newData.val() === null" },
+        "badges": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+          "$badgeId": {
+            ".validate": "newData.isBoolean() || newData.val() === null"
+          }
+        },
+        "secteurs": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+          "$secteurKey": {
+            ".validate": "newData.isBoolean() || newData.val() === null"
+          }
+        },
         "$other": { ".validate": false }
       }
     },

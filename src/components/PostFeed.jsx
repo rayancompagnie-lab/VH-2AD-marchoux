@@ -3,6 +3,7 @@ import { onValue, ref, remove, set } from 'firebase/database'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { cleanupExpiredPosts, isExpired } from '../utils/ttl'
+import Avatar from './Avatar'
 
 const REACTION_EMOJIS = ['🙏', '❤️', '🔥', '👏', '🎉']
 
@@ -14,7 +15,6 @@ export default function PostFeed({ basePath, canDelete }) {
     const postsRef = ref(db, basePath)
     const unsubscribe = onValue(postsRef, async (snap) => {
       const data = snap.val() || {}
-      // Nettoyage des posts expirés (suppression base de données + application)
       await cleanupExpiredPosts(basePath, data)
       const list = Object.entries(data)
         .filter(([, p]) => !isExpired(p))
@@ -44,7 +44,10 @@ export default function PostFeed({ basePath, canDelete }) {
       {posts.map((post) => (
         <div key={post.id} className="post-card">
           <div className="post-header">
-            <strong>{post.authorName}</strong>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Avatar avatarId={post.authorAvatarId} size={32} name={post.authorName} />
+              <strong>{post.authorName}</strong>
+            </div>
             {post.expiresAt && (
               <span className="expiry">
                 expire le {new Date(post.expiresAt).toLocaleString('fr-FR')}
@@ -52,14 +55,7 @@ export default function PostFeed({ basePath, canDelete }) {
             )}
           </div>
 
-          {post.type === 'texte' && <p>{post.content}</p>}
-          {post.type === 'vocal' && <audio controls src={post.content} />}
-          {post.type === 'image' && (
-            <div>
-              <img src={post.content} alt="publication" className="post-image" />
-              {post.texte && <p>{post.texte}</p>}
-            </div>
-          )}
+          {post.content && <p style={{ whiteSpace: 'pre-wrap' }}>{post.content}</p>}
 
           <div className="reactions">
             {REACTION_EMOJIS.map((emoji) => {

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { get, ref } from 'firebase/database'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
-import { TRIBUS, STATUTS, findTribu, findStatut } from '../utils/groups'
+import { findTribu, findStatut } from '../utils/groups'
 import ServiceDirectory from '../components/ServiceDirectory'
 import PostFeed from '../components/PostFeed'
 import PostComposer from '../components/PostComposer'
@@ -12,8 +12,9 @@ import Marketplace from '../components/Marketplace'
 import Testimonies from '../components/Testimonies'
 import PremiumBadge from '../components/PremiumBadge'
 import GroupBoard from '../components/GroupBoard'
-import LeamanBoard from '../components/LeamanBoard'   // 👈 import
-import KanegnonBoard from '../components/KanegnonBoard' // 👈 import
+import LeamanBoard from '../components/LeamanBoard'
+import KanegnonBoard from '../components/KanegnonBoard'
+import Avatar from '../components/Avatar'
 import MyProfile from './MyProfile'
 import Attendance from './Attendance'
 import AttendanceReport from '../components/AttendanceReport'
@@ -27,7 +28,7 @@ const STATIC_TABS = [
   'Présence',
   'Direct',
   'Mon profil',
-  'Rapport de présence',   // admin seulement
+  'Rapport de présence',
   'Administration'
 ]
 
@@ -88,7 +89,6 @@ export default function Home() {
       if (t === 'Rapport de présence' && !isAdmin) return false
       return true
     }),
-    // Ajout dynamique selon le sexe
     ...(profile?.sexe === 'femme' ? ['Leaman'] : []),
     ...(profile?.sexe === 'homme' ? ['Kanegnon'] : []),
     ...myGroups.map((g) => g.label)
@@ -105,7 +105,7 @@ export default function Home() {
         </div>
         <div className="user-chip">
           <button className="user-mini" onClick={() => setTab('Mon profil')} title="Voir mon profil">
-            {profile?.photoPrincipale && <img src={profile.photoPrincipale} alt="" className="user-mini-avatar" />}
+            <Avatar avatarId={profile?.avatarId} size={26} name={profile?.prenom} />
             <span>
               {profile?.prenom} {profile?.nom}
               {isAdmin && ' (Admin)'} {!isAdmin && isSemiAdmin && ' (Semi-admin)'}
@@ -129,7 +129,7 @@ export default function Home() {
         {tab === 'Actualités' && (
           <div>
             {canManage('actualites') && (
-              <PostComposer basePath="posts/culte" allowedTypes={['texte', 'vocal', 'image']} defaultDurationHours={24} />
+              <PostComposer basePath="posts/culte" defaultDurationHours={24} />
             )}
             <PostFeed basePath="posts/culte" canDelete={canManage('actualites')} />
           </div>
@@ -137,7 +137,7 @@ export default function Home() {
         {tab === 'Infos travail' && (
           <div>
             {canManage('infosTravail') && (
-              <PostComposer basePath="posts/travail" allowedTypes={['texte', 'image']} defaultDurationHours={168} />
+              <PostComposer basePath="posts/travail" defaultDurationHours={168} />
             )}
             <PostFeed basePath="posts/travail" canDelete={canManage('infosTravail')} />
           </div>

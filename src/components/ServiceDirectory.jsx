@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { findTribu, findStatut } from '../utils/groups'
 import Badge from './Badge'
 import PremiumBadge from './PremiumBadge'
+import Avatar from './Avatar'
 
 function toWhatsappLink(contact) {
   const digits = String(contact || '').replace(/[^\d+]/g, '').replace('+', '')
@@ -53,7 +54,7 @@ export default function ServiceDirectory() {
           return (
             <div key={m.uid} className="member-card">
               <div className="member-card-body" onClick={() => setSelected(m)} role="button" tabIndex={0}>
-                {m.photoPrincipale && <img src={m.photoPrincipale} alt={`${m.prenom} ${m.nom}`} className="member-avatar" />}
+                <Avatar avatarId={m.avatarId} size={64} name={m.prenom} />
                 <h3>
                   {m.prenom} {m.nom}{' '}
                   <PremiumBadge show={premium} canRequest={!premium && m.uid === user?.uid} name={`${m.prenom} ${m.nom}`} />
@@ -84,9 +85,8 @@ export default function ServiceDirectory() {
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setSelected(null)}>✕</button>
             <h3>{selected.prenom} {selected.nom}</h3>
-            <div className="modal-photos">
-              {selected.photoPrincipale && <img src={selected.photoPrincipale} alt="Photo principale" />}
-              {selected.photoSecondaire && <img src={selected.photoSecondaire} alt="Deuxième photo" />}
+            <div style={{ display: 'flex', justifyContent: 'center', margin: '10px 0' }}>
+              <Avatar avatarId={selected.avatarId} size={96} name={selected.prenom} />
             </div>
             <p><strong>Titre / responsabilité :</strong> {orAucun(selected.titre)}</p>
             <p><strong>Travail / expérience :</strong> {orAucun(selected.experience)}</p>

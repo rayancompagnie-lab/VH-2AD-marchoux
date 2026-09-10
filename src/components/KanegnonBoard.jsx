@@ -3,6 +3,7 @@ import { onValue, push, ref, remove, set } from 'firebase/database'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { cleanupExpiredPosts, computeExpiresAt, isExpired } from '../utils/ttl'
+import Avatar from './Avatar'
 
 const BASE_PATH = 'groupes/kanegnon'
 
@@ -35,7 +36,7 @@ export default function KanegnonBoard() {
       await set(newRef, {
         authorUid: user.uid,
         authorName: `${profile?.prenom || ''} ${profile?.nom || ''}`.trim(),
-        authorPhoto: profile?.photoPrincipale || '',
+        authorAvatarId: profile?.avatarId || '',
         content: text,
         createdAt: Date.now(),
         expiresAt: computeExpiresAt({ durationHours: 168 })
@@ -75,9 +76,12 @@ export default function KanegnonBoard() {
         {posts.map((post) => (
           <div key={post.id} className="post-card">
             <div className="post-header">
-              <strong>{post.authorName}</strong>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Avatar avatarId={post.authorAvatarId} size={32} name={post.authorName} />
+                <strong>{post.authorName}</strong>
+              </div>
             </div>
-            <p>{post.content}</p>
+            <p style={{ whiteSpace: 'pre-wrap' }}>{post.content}</p>
             {(post.authorUid === user?.uid || isAdmin) && (
               <button className="delete-btn" onClick={() => deletePost(post.id)}>Supprimer</button>
             )}

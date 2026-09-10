@@ -1,24 +1,23 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { fileToResizedBase64 } from '../utils/images'
 import { normalizeIvorianPhone } from '../utils/phone'
 import { TRIBUS, STATUTS } from '../utils/groups'
 import PasswordField from '../components/PasswordField'
+import AvatarPicker from '../components/AvatarPicker'
 
 export default function Register() {
   const { registerWithEmail } = useAuth()
   const navigate = useNavigate()
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
-  const [photo1, setPhoto1] = useState(null)
-  const [photo2, setPhoto2] = useState(null)
   const [form, setForm] = useState({
     nom: '',
     prenom: '',
     email: '',
     password: '',
-    sexe: '',              // 👈 ajouté dans l’état initial
+    sexe: '',
+    avatarId: '',
     titre: '',
     experience: '',
     contact: '',
@@ -30,22 +29,29 @@ export default function Register() {
   })
 
   function update(field, value) {
-    setForm((f) => ({ ...f, [field]: value }))
+    setForm((f) => {
+      const next = { ...f, [field]: value }
+      // Si on change le sexe, on réinitialise l'avatar (les listes sont différentes)
+      if (field === 'sexe' && value !== f.sexe) {
+        next.avatarId = ''
+      }
+      return next
+    })
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
     if (!form.sexe) {
-      setError('Choisis ton sexe.')   // 👈 validation ajoutée
+      setError('Choisis ton sexe.')
+      return
+    }
+    if (!form.avatarId) {
+      setError('Choisis un avatar.')
       return
     }
     if (!form.contact) {
       setError('Le contact est obligatoire.')
-      return
-    }
-    if (!photo1) {
-      setError('Ajoute au moins une photo (obligatoire).')
       return
     }
     if (!form.tribu) {
@@ -58,13 +64,9 @@ export default function Register() {
     }
     setSending(true)
     try {
-      const photoPrincipale = await fileToResizedBase64(photo1)
-      const photoSecondaire = photo2 ? await fileToResizedBase64(photo2) : ''
       await registerWithEmail({
         ...form,
-        contact: normalizeIvorianPhone(form.contact),
-        photoPrincipale,
-        photoSecondaire
+        contact: normalizeIvorianPhone(form.contact)
       })
       navigate('/')
     } catch (err) {
@@ -85,23 +87,19 @@ export default function Register() {
         <input placeholder="Prénom" value={form.prenom} onChange={(e) => update('prenom', e.target.value)} required />
         <input type="email" placeholder="Email" value={form.email} onChange={(e) => update('email', e.target.value)} required />
 
-        {/* 👇 Champ sexe ajouté juste après l’email */}
         <select value={form.sexe} onChange={(e) => update('sexe', e.target.value)} required>
           <option value="">Choisis ton sexe</option>
           <option value="homme">Homme 🛡️ (Kanegnon)</option>
           <option value="femme">Femme 🌸 (Leaman)</option>
         </select>
 
-        <PasswordField value={form.password} onChange={(e) => update('password', e.target.value)} required minLength={6} />
+        <AvatarPicker
+          sexe={form.sexe}
+          value={form.avatarId}
+          onChange={(id) => update('avatarId', id)}
+        />
 
-        <label className="photo-field">
-          Photo de profil (obligatoire)
-          <input type="file" accept="image/*" onChange={(e) => setPhoto1(e.target.files[0] || null)} required />
-        </label>
-        <label className="photo-field">
-          Deuxième photo (facultatif)
-          <input type="file" accept="image/*" onChange={(e) => setPhoto2(e.target.files[0] || null)} />
-        </label>
+        <PasswordField value={form.password} onChange={(e) => update('password', e.target.value)} required minLength={6} />
 
         <input placeholder="Titre / responsabilité dans l'église (facultatif)" value={form.titre} onChange={(e) => update('titre', e.target.value)} />
         <input placeholder="Travail ou expérience (facultatif)" value={form.experience} onChange={(e) => update('experience', e.target.value)} />

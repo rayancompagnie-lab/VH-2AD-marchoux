@@ -633,3 +633,41 @@ img { max-width: 100%; display: block; }
 .testimony-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 
 .group-board h2 { color: var(--color-teal-dark); }
+/* ---------- Avatar picker ---------- */
+.avatar-picker {
+  background: #faf7ee;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px dashed var(--color-gold);
+}
+
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin-top: 6px;
+}
+
+@media (max-width: 480px) {
+  .avatar-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.avatar-choice {
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s;
+  padding: 0;
+}
+
+.avatar-choice:hover {
+  transform: scale(1.08);
+}
+
+.avatar-choice.selected {
+  transform: scale(1.05);
+}

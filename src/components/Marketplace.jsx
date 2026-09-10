@@ -2,25 +2,18 @@ import { useEffect, useState } from 'react'
 import { onValue, push, ref, remove, set } from 'firebase/database'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
-import { fileToResizedBase64 } from '../utils/images'
+import { PREMIUM_WHATSAPP, toWhatsappLink } from '../utils/whatsapp'
 import PremiumBadge from './PremiumBadge'
+import Avatar from './Avatar'
 
 const FREE_LIMIT = 5
 const PREMIUM_LIMIT = 20
-const PREMIUM_WHATSAPP = '2250160672966' // +225 01 60 67 29 66
-
-function toWhatsappLink(contact, message) {
-  const digits = String(contact || '').replace(/[^\d]/g, '')
-  const text = message ? `?text=${encodeURIComponent(message)}` : ''
-  return `https://wa.me/${digits}${text}`
-}
 
 export default function Marketplace() {
-  const { user, profile, isPremium, isAdmin, canManage } = useAuth()
+  const { user, profile, isPremium, canManage } = useAuth()
   const [articles, setArticles] = useState([])
   const [titre, setTitre] = useState('')
   const [description, setDescription] = useState('')
-  const [images, setImages] = useState([])
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
 
@@ -47,12 +40,6 @@ export default function Marketplace() {
   const limit = isPremium ? PREMIUM_LIMIT : FREE_LIMIT
   const reachedLimit = myArticles.length >= limit
 
-  async function handleImagesChange(e) {
-    const files = Array.from(e.target.files).slice(0, 3)
-    const base64s = await Promise.all(files.map((f) => fileToResizedBase64(f, 800, 0.75)))
-    setImages(base64s)
-  }
-
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
@@ -67,16 +54,15 @@ export default function Marketplace() {
       await set(newRef, {
         authorUid: user.uid,
         authorName: `${profile?.prenom || ''} ${profile?.nom || ''}`.trim(),
+        authorAvatarId: profile?.avatarId || '',
         authorContact: profile?.contact || '',
         authorPremium: isPremium,
         titre,
         description,
-        images,
         createdAt: Date.now()
       })
       setTitre('')
       setDescription('')
-      setImages([])
     } catch (err) {
       setError('Échec de la publication : ' + err.message)
     } finally {
@@ -102,7 +88,6 @@ export default function Marketplace() {
           {error && <p className="error">{error}</p>}
           <input placeholder="Titre de l'article" value={titre} onChange={(e) => setTitre(e.target.value)} />
           <textarea placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
-          <input type="file" accept="image/*" multiple onChange={handleImagesChange} />
           <p className="muted-small">
             {myArticles.length}/{limit} articles publiés {isPremium && <PremiumBadge show />}
           </p>
@@ -135,18 +120,16 @@ export default function Marketplace() {
         {articles.length === 0 && <p>Aucun article publié pour le moment.</p>}
         {articles.map((a) => (
           <div key={a.id} className="market-card-large">
-            {a.images?.length > 0 && (
-              <div className="market-gallery">
-                {a.images.map((img, i) => (
-                  <img key={i} src={img} alt={a.titre} className="market-image-large" />
-                ))}
-              </div>
-            )}
             <div className="market-card-body">
-              <h3>
-                {a.titre} {a.authorPremium && <PremiumBadge show />}
-              </h3>
-              <p className="market-author">Par {a.authorName}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <Avatar avatarId={a.authorAvatarId} size={40} name={a.authorName} />
+                <div>
+                  <h3 style={{ margin: 0 }}>
+                    {a.titre} {a.authorPremium && <PremiumBadge show />}
+                  </h3>
+                  <p className="market-author" style={{ margin: 0 }}>Par {a.authorName}</p>
+                </div>
+              </div>
               <p className="market-description">{a.description}</p>
             </div>
             {a.authorContact && (

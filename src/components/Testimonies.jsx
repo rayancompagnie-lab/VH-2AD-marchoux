@@ -2,22 +2,13 @@ import { useEffect, useState } from 'react'
 import { onValue, push, ref, remove, set } from 'firebase/database'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
-
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
-}
+import Avatar from './Avatar'
 
 export default function Testimonies() {
   const { user, profile, canManage } = useAuth()
   const canModerate = canManage('temoignages')
   const [items, setItems] = useState([])
   const [text, setText] = useState('')
-  const [pdf, setPdf] = useState(null)
   const [anonymous, setAnonymous] = useState(false)
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
@@ -36,31 +27,24 @@ export default function Testimonies() {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    if (!text && !pdf) {
-      setError('Écris un témoignage ou joins un PDF.')
+    if (!text) {
+      setError('Écris un témoignage.')
       return
     }
     setSending(true)
     try {
       const newRef = push(ref(db, 'temoignages'))
-      const payload = {
+      await set(newRef, {
         authorUid: user.uid,
         authorName: `${profile?.prenom || ''} ${profile?.nom || ''}`.trim(),
+        authorAvatarId: profile?.avatarId || '',
         anonymous,
         approved: false,
+        type: 'texte',
+        content: text,
         createdAt: Date.now()
-      }
-      if (pdf) {
-        payload.type = 'pdf'
-        payload.content = await fileToBase64(pdf)
-        payload.fileName = pdf.name
-      } else {
-        payload.type = 'texte'
-        payload.content = text
-      }
-      await set(newRef, payload)
+      })
       setText('')
-      setPdf(null)
       setAnonymous(false)
     } catch (err) {
       setError("Échec de l'envoi : " + err.message)
@@ -91,10 +75,6 @@ export default function Testimonies() {
       <form onSubmit={handleSubmit} className="post-composer">
         {error && <p className="error">{error}</p>}
         <textarea placeholder="Écris ton témoignage..." value={text} onChange={(e) => setText(e.target.value)} />
-        <label className="photo-field">
-          Ou joins un PDF (à la place du texte)
-          <input type="file" accept="application/pdf" onChange={(e) => setPdf(e.target.files[0] || null)} />
-        </label>
         <label className="field-with-toggle">
           <span><input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} /> Rester anonyme (même les admins ne verront pas mon nom)</span>
         </label>
@@ -105,20 +85,23 @@ export default function Testimonies() {
         {visibleItems.length === 0 && <p>Aucun témoignage pour le moment.</p>}
         {visibleItems.map((t) => {
           const displayName = t.anonymous ? 'Anonyme' : t.authorName
+          const displayAvatarId = t.anonymous ? '' : t.authorAvatarId
           const isMine = t.authorUid === user?.uid
           return (
             <div key={t.id} className="post-card">
               <div className="post-header">
-                <strong>{displayName}</strong>
-                {!t.approved && <span className="expiry">{canModerate ? 'En attente de validation' : isMine ? 'En attente de validation par un admin' : ''}</span>}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Avatar avatarId={displayAvatarId} size={32} name={displayName} />
+                  <strong>{displayName}</strong>
+                </div>
+                {!t.approved && (
+                  <span className="expiry">
+                    {canModerate ? 'En attente de validation' : isMine ? 'En attente de validation par un admin' : ''}
+                  </span>
+                )}
               </div>
 
-              {t.type === 'texte' && <p>{t.content}</p>}
-              {t.type === 'pdf' && (
-                <a className="contact-btn" href={t.content} download={t.fileName || 'temoignage.pdf'} target="_blank" rel="noreferrer">
-                  📄 Voir le PDF
-                </a>
-              )}
+              <p style={{ whiteSpace: 'pre-wrap' }}>{t.content}</p>
 
               <div className="testimony-actions">
                 {canModerate && !t.approved && (

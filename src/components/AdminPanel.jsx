@@ -3,6 +3,7 @@ import { onValue, push, ref, remove, set } from 'firebase/database'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import Badge from './Badge'
+import Avatar from './Avatar'
 
 const SECTEURS = [
   { key: 'actualites', label: 'Actualités' },
@@ -107,6 +108,7 @@ export default function AdminPanel() {
         <table className="admin-table">
           <thead>
             <tr>
+              <th></th>
               <th>Nom</th>
               <th>Rôle</th>
               <th>Secteurs (si semi-admin)</th>
@@ -118,6 +120,7 @@ export default function AdminPanel() {
           <tbody>
             {users.map((u) => (
               <tr key={u.uid}>
+                <td><Avatar avatarId={u.avatarId} size={32} name={u.prenom} /></td>
                 <td>{u.prenom} {u.nom}</td>
                 <td>
                   <select value={u.role || 'member'} onChange={(e) => setRole(u.uid, e.target.value)}>

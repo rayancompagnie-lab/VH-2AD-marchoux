@@ -3,6 +3,7 @@ import { onValue, push, ref, remove, set } from 'firebase/database'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { cleanupExpiredPosts, computeExpiresAt, isExpired } from '../utils/ttl'
+import Avatar from './Avatar'
 
 const BASE_PATH = 'groupes/leaman'
 
@@ -39,7 +40,7 @@ export default function LeamanBoard() {
       await set(newRef, {
         authorUid: user.uid,
         authorName: `${profile?.prenom || ''} ${profile?.nom || ''}`.trim(),
-        authorPhoto: profile?.photoPrincipale || '',
+        authorAvatarId: profile?.avatarId || '',
         content: text,
         createdAt: Date.now(),
         expiresAt: computeExpiresAt({ durationHours: 168 }) // 7 jours
@@ -138,18 +139,7 @@ export default function LeamanBoard() {
             borderLeft: '3px solid #e8a0b5'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-              {post.authorPhoto ? (
-                <img src={post.authorPhoto} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '2px solid #e8a0b5' }} />
-              ) : (
-                <div style={{
-                  width: 36, height: 36, borderRadius: '50%',
-                  background: '#e8a0b5', color: 'white',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontWeight: 'bold'
-                }}>
-                  {(post.authorName || '?').charAt(0).toUpperCase()}
-                </div>
-              )}
+              <Avatar avatarId={post.authorAvatarId} size={36} name={post.authorName} />
               <strong style={{ color: '#b3123a', fontFamily: 'Georgia, serif' }}>
                 {post.authorName}
               </strong>

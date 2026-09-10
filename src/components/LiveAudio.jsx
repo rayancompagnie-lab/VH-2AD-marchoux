@@ -3,6 +3,7 @@ import AgoraRTC from 'agora-rtc-sdk-ng'
 import { onValue, ref, remove, set } from 'firebase/database'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
+import Avatar from './Avatar'
 
 const APP_ID = import.meta.env.VITE_AGORA_APP_ID
 const CHANNEL = 'vase-honneur-culte'
@@ -18,7 +19,6 @@ export default function LiveAudio() {
   const localTrackRef = useRef(null)
   const busyRef = useRef(false)
 
-  // Écoute la session live
   useEffect(() => {
     const unsubscribe = onValue(ref(db, 'liveSessions/current'), (snap) => {
       setLive(snap.val())
@@ -77,7 +77,6 @@ export default function LiveAudio() {
     }
   }, [leave])
 
-  // ====== ADMIN : Démarrer le direct (SEUL INTERVENANT) ======
   async function startBroadcast() {
     if (busyRef.current || connected || connecting) return
     setError('')
@@ -110,6 +109,7 @@ export default function LiveAudio() {
         active: true,
         startedByUid: user.uid,
         startedByName: `${profile?.prenom || ''} ${profile?.nom || ''}`.trim(),
+        startedByAvatarId: profile?.avatarId || '',
         startedAt: Date.now()
       })
       setConnected(true)
@@ -123,7 +123,6 @@ export default function LiveAudio() {
     }
   }
 
-  // ====== ADMIN : Arrêter le direct ======
   async function stopBroadcast() {
     if (busyRef.current) return
     busyRef.current = true
@@ -135,7 +134,6 @@ export default function LiveAudio() {
     }
   }
 
-  // ====== TOUT LE MONDE (sauf l'animateur) : Écouter ======
   async function listen() {
     if (busyRef.current || connected || connecting) return
     setError('')
@@ -169,11 +167,10 @@ export default function LiveAudio() {
       await client.join(APP_ID, CHANNEL, token, user.uid)
       setConnected(true)
 
-      // S'enregistrer dans la liste des auditeurs
       await set(ref(db, `liveSessions/current/listeners/${user.uid}`), {
         uid: user.uid,
         name: `${profile?.prenom || ''} ${profile?.nom || ''}`.trim() || 'Membre',
-        photo: profile?.photoPrincipale || '',
+        avatarId: profile?.avatarId || '',
         joinedAt: Date.now()
       })
     } catch (err) {
@@ -186,11 +183,9 @@ export default function LiveAudio() {
     }
   }
 
-  // Est-ce moi qui anime ce direct ?
   const isBroadcaster = live?.active && live.startedByUid === user?.uid
   const isAudience = live?.active && live.startedByUid !== user?.uid
 
-  // Liste des auditeurs
   const listeners = live?.listeners
     ? Object.values(live.listeners)
         .filter((l) => l.uid !== live.startedByUid)
@@ -202,7 +197,6 @@ export default function LiveAudio() {
       <h2>Direct</h2>
       {error && <p className="error">{error}</p>}
 
-      {/* ===== CAS 1 : Aucun direct en cours ===== */}
       {!live?.active && (
         <>
           {isAdmin ? (
@@ -215,19 +209,19 @@ export default function LiveAudio() {
         </>
       )}
 
-      {/* ===== CAS 2 : Direct en cours ===== */}
       {live?.active && (
         <div>
-          <p>🔴 En direct — animé par {live.startedByName}</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 10 }}>
+            <Avatar avatarId={live.startedByAvatarId} size={36} name={live.startedByName} />
+            <p style={{ margin: 0 }}>🔴 En direct — animé par <strong>{live.startedByName}</strong></p>
+          </div>
 
-          {/* L'animateur : peut arrêter */}
           {isBroadcaster && (
             <button onClick={stopBroadcast} disabled={connecting}>
               ⏹️ Arrêter le direct
             </button>
           )}
 
-          {/* Tous les autres : peuvent écouter */}
           {isAudience && !connected && (
             <button onClick={listen} disabled={connecting}>
               {connecting ? 'Connexion...' : '🎧 Écouter le direct'}
@@ -237,7 +231,6 @@ export default function LiveAudio() {
             <button onClick={leave}>Quitter le direct</button>
           )}
 
-          {/* Liste des auditeurs */}
           <div style={{ marginTop: 24, textAlign: 'left' }}>
             <h3 style={{ fontSize: 15, color: 'var(--color-teal-dark)' }}>
               🎧 Auditeurs en direct ({listeners.length})
@@ -257,30 +250,7 @@ export default function LiveAudio() {
                       borderBottom: '1px solid #eee7d5'
                     }}
                   >
-                    {l.photo ? (
-                      <img
-                        src={l.photo}
-                        alt=""
-                        style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: '50%',
-                          background: 'var(--color-teal)',
-                          color: 'white',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 'bold',
-                          fontSize: 14
-                        }}
-                      >
-                        {(l.name || '?').charAt(0).toUpperCase()}
-                      </div>
-                    )}
+                    <Avatar avatarId={l.avatarId} size={32} name={l.name} />
                     <span style={{ fontSize: 14 }}>
                       {l.name}
                       {l.uid === user?.uid && (

@@ -43,7 +43,8 @@ export function AuthProvider({ children }) {
       nom: data.nom || '',
       prenom: data.prenom || '',
       email: data.email,
-      sexe: data.sexe || '',   // 👈 NOUVEAU
+      sexe: data.sexe || '',
+      avatarId: data.avatarId || '',
       titre: data.titre || '',
       experience: data.experience || '',
       contact: data.contact || '',
@@ -52,8 +53,6 @@ export function AuthProvider({ children }) {
       serviceVisible: !!data.serviceVisible,
       tribu: data.tribu || '',
       statutRelationnel: data.statutRelationnel || '',
-      photoPrincipale: data.photoPrincipale || '',
-      photoSecondaire: data.photoSecondaire || '',
       role: 'member',
       secteurs: {},
       badges: {},
@@ -64,7 +63,8 @@ export function AuthProvider({ children }) {
 
   async function completeMemberProfile(uid, data) {
     await update(ref(db, `users/${uid}`), {
-      sexe: data.sexe || '',   // 👈 NOUVEAU
+      sexe: data.sexe || '',
+      avatarId: data.avatarId || '',
       titre: data.titre || '',
       experience: data.experience || '',
       contact: data.contact,
@@ -73,8 +73,6 @@ export function AuthProvider({ children }) {
       serviceVisible: !!data.serviceVisible,
       tribu: data.tribu || '',
       statutRelationnel: data.statutRelationnel || '',
-      photoPrincipale: data.photoPrincipale || '',
-      photoSecondaire: data.photoSecondaire || '',
       profileComplete: true
     })
   }
