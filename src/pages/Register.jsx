@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { fileToResizedBase64 } from '../utils/images'
 import { normalizeIvorianPhone } from '../utils/phone'
+import { TRIBUS, STATUTS } from '../utils/groups'
 import PasswordField from '../components/PasswordField'
 
 export default function Register() {
@@ -20,11 +21,11 @@ export default function Register() {
     titre: '',
     experience: '',
     contact: '',
-    contactVisible: true,
     lieuHabitation: '',
-    lieuVisible: false,
     service: '',
-    serviceVisible: true
+    serviceVisible: true,
+    tribu: '',
+    statutRelationnel: ''
   })
 
   function update(field, value) {
@@ -40,6 +41,14 @@ export default function Register() {
     }
     if (!photo1) {
       setError('Ajoute au moins une photo (obligatoire).')
+      return
+    }
+    if (!form.tribu) {
+      setError('Choisis ta tribu.')
+      return
+    }
+    if (!form.statutRelationnel) {
+      setError('Choisis ton statut.')
       return
     }
     setSending(true)
@@ -78,20 +87,22 @@ export default function Register() {
 
         <input placeholder="Titre / responsabilité dans l'église (facultatif)" value={form.titre} onChange={(e) => update('titre', e.target.value)} />
         <input placeholder="Travail ou expérience (facultatif)" value={form.experience} onChange={(e) => update('experience', e.target.value)} />
+        <input placeholder="Contact WhatsApp (obligatoire), ex: 0102030405" value={form.contact} onChange={(e) => update('contact', e.target.value)} required />
+        <input placeholder="Lieu d'habitation (facultatif)" value={form.lieuHabitation} onChange={(e) => update('lieuHabitation', e.target.value)} />
 
-        <label className="field-with-toggle">
-          <input placeholder="Contact WhatsApp (obligatoire), ex: 0102030405" value={form.contact} onChange={(e) => update('contact', e.target.value)} required />
-          <span>
-            <input type="checkbox" checked={form.contactVisible} onChange={(e) => update('contactVisible', e.target.checked)} /> Afficher mon contact publiquement
-          </span>
-        </label>
+        <select value={form.tribu} onChange={(e) => update('tribu', e.target.value)} required>
+          <option value="">Choisis ta tribu</option>
+          {TRIBUS.map((t) => (
+            <option key={t.key} value={t.key}>{t.label}</option>
+          ))}
+        </select>
 
-        <label className="field-with-toggle">
-          <input placeholder="Lieu d'habitation (facultatif)" value={form.lieuHabitation} onChange={(e) => update('lieuHabitation', e.target.value)} />
-          <span>
-            <input type="checkbox" checked={form.lieuVisible} onChange={(e) => update('lieuVisible', e.target.checked)} /> Afficher mon lieu d'habitation
-          </span>
-        </label>
+        <select value={form.statutRelationnel} onChange={(e) => update('statutRelationnel', e.target.value)} required>
+          <option value="">Choisis ton statut</option>
+          {STATUTS.map((s) => (
+            <option key={s.key} value={s.key}>{s.label}</option>
+          ))}
+        </select>
 
         <label className="field-with-toggle">
           <input placeholder="Mon service (ex: chorale, protocole, media...)" value={form.service} onChange={(e) => update('service', e.target.value)} />

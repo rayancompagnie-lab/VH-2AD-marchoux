@@ -47,11 +47,11 @@ export function AuthProvider({ children }) {
       titre: data.titre || '',
       experience: data.experience || '',
       contact: data.contact || '',
-      contactVisible: !!data.contactVisible,
       lieuHabitation: data.lieuHabitation || '',
-      lieuVisible: !!data.lieuVisible,
       service: data.service || '',
       serviceVisible: !!data.serviceVisible,
+      tribu: data.tribu || '',
+      statutRelationnel: data.statutRelationnel || '',
       photoPrincipale: data.photoPrincipale || '',
       photoSecondaire: data.photoSecondaire || '',
       role: 'member', // 'member' | 'semiAdmin' | 'admin'
@@ -70,11 +70,11 @@ export function AuthProvider({ children }) {
       titre: data.titre || '',
       experience: data.experience || '',
       contact: data.contact,
-      contactVisible: !!data.contactVisible,
       lieuHabitation: data.lieuHabitation || '',
-      lieuVisible: !!data.lieuVisible,
       service: data.service || '',
       serviceVisible: !!data.serviceVisible,
+      tribu: data.tribu || '',
+      statutRelationnel: data.statutRelationnel || '',
       profileComplete: true
     })
   }

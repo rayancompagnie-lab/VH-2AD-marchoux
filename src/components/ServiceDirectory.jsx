@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { onValue, ref } from 'firebase/database'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
+import { findTribu, findStatut } from '../utils/groups'
 import Badge from './Badge'
 import PremiumBadge from './PremiumBadge'
 
@@ -47,6 +48,8 @@ export default function ServiceDirectory() {
       <div className="member-grid">
         {members.map((m) => {
           const premium = !!m.premium || m.role === 'admin'
+          const tribu = findTribu(m.tribu)
+          const statut = findStatut(m.statutRelationnel)
           return (
             <div key={m.uid} className="member-card">
               <div className="member-card-body" onClick={() => setSelected(m)} role="button" tabIndex={0}>
@@ -57,9 +60,11 @@ export default function ServiceDirectory() {
                 </h3>
                 <p className="titre">{orAucun(m.titre)}</p>
                 <p className="service">{m.service}</p>
-                {m.contactVisible && <p className="contact">{m.contact}</p>}
-                {m.lieuVisible && <p className="lieu">{orAucun(m.lieuHabitation)}</p>}
+                <p className="contact">{m.contact}</p>
+                <p className="lieu">{orAucun(m.lieuHabitation)}</p>
                 <div className="badges">
+                  {tribu && <span className="badge-pill" style={{ background: tribu.color }}>{tribu.label}</span>}
+                  {statut && <span className="badge-pill" style={{ background: statut.color }}>{statut.label}</span>}
                   {Object.keys(m.badges || {}).map((bId) => (
                     <Badge key={bId} badge={badges[bId]} />
                   ))}
@@ -86,9 +91,19 @@ export default function ServiceDirectory() {
             <p><strong>Titre / responsabilité :</strong> {orAucun(selected.titre)}</p>
             <p><strong>Travail / expérience :</strong> {orAucun(selected.experience)}</p>
             <p><strong>Service :</strong> {orAucun(selected.service)}</p>
-            {selected.contactVisible && <p><strong>Contact :</strong> {selected.contact}</p>}
-            {selected.lieuVisible && <p><strong>Lieu d'habitation :</strong> {orAucun(selected.lieuHabitation)}</p>}
+            <p><strong>Contact :</strong> {selected.contact}</p>
+            <p><strong>Lieu d'habitation :</strong> {orAucun(selected.lieuHabitation)}</p>
             <div className="badges">
+              {findTribu(selected.tribu) && (
+                <span className="badge-pill" style={{ background: findTribu(selected.tribu).color }}>
+                  {findTribu(selected.tribu).label}
+                </span>
+              )}
+              {findStatut(selected.statutRelationnel) && (
+                <span className="badge-pill" style={{ background: findStatut(selected.statutRelationnel).color }}>
+                  {findStatut(selected.statutRelationnel).label}
+                </span>
+              )}
               {Object.keys(selected.badges || {}).map((bId) => (
                 <Badge key={bId} badge={badges[bId]} />
               ))}

@@ -4,6 +4,7 @@ import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { fileToResizedBase64 } from '../utils/images'
 import { normalizeIvorianPhone } from '../utils/phone'
+import { findTribu, findStatut } from '../utils/groups'
 import PremiumBadge from '../components/PremiumBadge'
 
 export default function MyProfile() {
@@ -12,9 +13,7 @@ export default function MyProfile() {
     titre: profile?.titre || '',
     experience: profile?.experience || '',
     contact: profile?.contact || '',
-    contactVisible: !!profile?.contactVisible,
     lieuHabitation: profile?.lieuHabitation || '',
-    lieuVisible: !!profile?.lieuVisible,
     service: profile?.service || '',
     serviceVisible: !!profile?.serviceVisible
   })
@@ -52,6 +51,8 @@ export default function MyProfile() {
   if (!profile) return null
 
   const premium = !!profile.premium || profile.role === 'admin'
+  const tribu = findTribu(profile.tribu)
+  const statut = findStatut(profile.statutRelationnel)
 
   return (
     <div className="my-profile">
@@ -60,7 +61,11 @@ export default function MyProfile() {
         {profile.photoPrincipale && <img src={profile.photoPrincipale} alt="Ma photo" className="profile-avatar" />}
         <p><strong>{profile.prenom} {profile.nom}</strong></p>
         <p className="muted">{profile.email}</p>
-        <PremiumBadge show={premium} canRequest={!premium} name={`${profile.prenom} ${profile.nom}`} />
+        <div className="badges">
+          <PremiumBadge show={premium} canRequest={!premium} name={`${profile.prenom} ${profile.nom}`} />
+          {tribu && <span className="badge-pill" style={{ background: tribu.color }}>{tribu.label}</span>}
+          {statut && <span className="badge-pill" style={{ background: statut.color }}>{statut.label}</span>}
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="auth-form profile-form">
@@ -78,16 +83,8 @@ export default function MyProfile() {
 
         <input placeholder="Titre / responsabilité (facultatif)" value={form.titre} onChange={(e) => update('titre', e.target.value)} />
         <input placeholder="Travail ou expérience (facultatif)" value={form.experience} onChange={(e) => update('experience', e.target.value)} />
-
-        <label className="field-with-toggle">
-          <input placeholder="Contact WhatsApp (obligatoire), ex: 0102030405" value={form.contact} onChange={(e) => update('contact', e.target.value)} required />
-          <span><input type="checkbox" checked={form.contactVisible} onChange={(e) => update('contactVisible', e.target.checked)} /> Afficher mon contact publiquement</span>
-        </label>
-
-        <label className="field-with-toggle">
-          <input placeholder="Lieu d'habitation (facultatif)" value={form.lieuHabitation} onChange={(e) => update('lieuHabitation', e.target.value)} />
-          <span><input type="checkbox" checked={form.lieuVisible} onChange={(e) => update('lieuVisible', e.target.checked)} /> Afficher mon lieu d'habitation</span>
-        </label>
+        <input placeholder="Contact WhatsApp (obligatoire), ex: 0102030405" value={form.contact} onChange={(e) => update('contact', e.target.value)} required />
+        <input placeholder="Lieu d'habitation (facultatif)" value={form.lieuHabitation} onChange={(e) => update('lieuHabitation', e.target.value)} />
 
         <label className="field-with-toggle">
           <input placeholder="Mon service" value={form.service} onChange={(e) => update('service', e.target.value)} />

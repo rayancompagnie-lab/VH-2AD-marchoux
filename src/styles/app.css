@@ -631,3 +631,5 @@ img { max-width: 100%; display: block; }
 }
 
 .testimony-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+.group-board h2 { color: var(--color-teal-dark); }
