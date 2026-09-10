@@ -1,11 +1,11 @@
-// Fichier en .cjs (CommonJS) volontairement : le reste du projet est en "type": "module"
-// (Vite), mais les fonctions serverless Vercel sont plus fiables en CommonJS classique
-// avec des packages comme agora-access-token qui ne sont pas pensés pour l'ESM.
+// api/agora-token.js
+// Fonction serverless Vercel — format CommonJS (compatible agora-access-token)
+// Le fichier api/package.json avec {"type":"commonjs"} force ce format.
+
+const { RtcTokenBuilder, RtcRole } = require('agora-access-token')
 
 module.exports = (req, res) => {
   try {
-    const { RtcTokenBuilder, RtcRole } = require('agora-access-token')
-
     const { channel, uid, role } = req.query || {}
 
     const appId = process.env.VITE_AGORA_APP_ID
@@ -43,8 +43,10 @@ module.exports = (req, res) => {
 
     res.status(200).json({ token })
   } catch (err) {
-    // On renvoie le détail de l'erreur au lieu de laisser la fonction planter
-    // silencieusement (FUNCTION_INVOCATION_FAILED sans explication).
-    res.status(500).json({ error: 'Erreur interne lors de la génération du token.', message: err.message })
+    res.status(500).json({
+      error: 'Erreur interne lors de la génération du token.',
+      message: err.message,
+      stack: err.stack
+    })
   }
 }
