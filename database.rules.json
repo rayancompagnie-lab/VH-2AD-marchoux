@@ -8,10 +8,10 @@
       "$uid": {
         ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
         "role": {
-          ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
+          ".write": "!data.exists() || root.child('users').child(auth.uid).child('role').val() === 'admin'"
         },
         "premium": {
-          ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
+          ".write": "!data.exists() || root.child('users').child(auth.uid).child('role').val() === 'admin'"
         },
         "secteurs": {
           ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
@@ -59,7 +59,12 @@
     "liveSessions": {
       ".read": "auth != null",
       "current": {
-        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || !data.exists())",
+        "listeners": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid"
+          }
+        }
       }
     },
 

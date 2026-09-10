@@ -16,10 +16,9 @@ export default function LiveAudio() {
 
   const clientRef = useRef(null)
   const localTrackRef = useRef(null)
-  // Empêche les doubles appels (React StrictMode, re-render, double-clic, etc.)
   const busyRef = useRef(false)
 
-  // Écoute les changements de la session live dans Firebase
+  // Écoute la session live (statut + infos diffuseur + liste auditeurs)
   useEffect(() => {
     const unsubscribe = onValue(ref(db, 'liveSessions/current'), (snap) => {
       setLive(snap.val())
@@ -42,7 +41,7 @@ export default function LiveAudio() {
     try {
       data = await res.json()
     } catch (e) {
-      // réponse non-JSON (ex: page d'erreur Vercel)
+      // réponse non-JSON
     }
     if (!res.ok) {
       throw new Error(data?.error || data?.message || `Impossible d'obtenir un token (code ${res.status}).`)
@@ -50,7 +49,17 @@ export default function LiveAudio() {
     return data.token
   }
 
-  // Quitte proprement le canal (utilisé au démontage et par les boutons)
+  // Retirer l'utilisateur de la liste des auditeurs dans Firebase
+  const removeListenerEntry = useCallback(async () => {
+    if (!user?.uid) return
+    try {
+      await remove(ref(db, `liveSessions/current/listeners/${user.uid}`))
+    } catch (e) {
+      // ignore : peut déjà être supprimé
+    }
+  }, [user])
+
+  // Quitter proprement le canal Agora + retirer de Firebase
   const leave = useCallback(async () => {
     try {
       if (localTrackRef.current) {
@@ -62,14 +71,15 @@ export default function LiveAudio() {
         await clientRef.current.leave()
       }
     } catch (err) {
-      // déjà déconnecté, on ignore
+      // déjà déconnecté
     }
     setConnected(false)
     setConnecting(false)
     busyRef.current = false
-  }, [])
+    await removeListenerEntry()
+  }, [removeListenerEntry])
 
-  // Nettoyage au démontage du composant
+  // Nettoyage au démontage
   useEffect(() => {
     return () => {
       leave()
@@ -86,7 +96,7 @@ export default function LiveAudio() {
       return
     }
     if (live?.active) {
-      setError('Un direct est déjà en cours. Arrête-le avant d\'en lancer un nouveau.')
+      setError("Un direct est déjà en cours. Arrête-le avant d'en lancer un nouveau.")
       return
     }
 
@@ -111,7 +121,6 @@ export default function LiveAudio() {
     } catch (err) {
       console.error('Erreur démarrage direct :', err)
       setError(err.message || 'Impossible de démarrer le direct.')
-      // Si on a réussi à join mais pas à publier, on quitte pour ne pas rester coincé
       await leave()
     } finally {
       setConnecting(false)
@@ -125,6 +134,7 @@ export default function LiveAudio() {
     busyRef.current = true
     try {
       await leave()
+      // Supprime toute la session (y compris la liste des auditeurs)
       await remove(ref(db, 'liveSessions/current'))
     } finally {
       busyRef.current = false
@@ -148,7 +158,6 @@ export default function LiveAudio() {
       const client = getClient()
       await client.setClientRole('audience')
 
-      // Retire d'éventuels anciens listeners avant d'en ajouter un nouveau
       client.removeAllListeners('user-published')
       client.removeAllListeners('user-unpublished')
 
@@ -165,6 +174,14 @@ export default function LiveAudio() {
 
       await client.join(APP_ID, CHANNEL, token, user.uid)
       setConnected(true)
+
+      // ✅ S'enregistrer dans la liste des auditeurs Firebase
+      await set(ref(db, `liveSessions/current/listeners/${user.uid}`), {
+        uid: user.uid,
+        name: `${profile?.prenom || ''} ${profile?.nom || ''}`.trim() || 'Membre',
+        photo: profile?.photoPrincipale || '',
+        joinedAt: Date.now()
+      })
     } catch (err) {
       console.error('Erreur écoute direct :', err)
       setError(err.message || 'Impossible de rejoindre le direct.')
@@ -178,6 +195,13 @@ export default function LiveAudio() {
   // Est-ce moi qui anime ce direct ?
   const isBroadcaster = live?.active && live.startedByUid === user?.uid
   const isOtherBroadcast = live?.active && live.startedByUid !== user?.uid
+
+  // Liste des auditeurs en temps réel (hors diffuseur)
+  const listeners = live?.listeners
+    ? Object.values(live.listeners)
+        .filter((l) => l.uid !== live.startedByUid)
+        .sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0))
+    : []
 
   return (
     <div className="live-audio">
@@ -209,7 +233,7 @@ export default function LiveAudio() {
             </button>
           )}
 
-          {/* Tout le monde (admin ou membre) SAUF le diffuseur peut écouter */}
+          {/* Tout le monde SAUF le diffuseur peut écouter */}
           {isOtherBroadcast && !connected && (
             <button onClick={listen} disabled={connecting}>
               {connecting ? 'Connexion...' : '🎧 Écouter le direct'}
@@ -219,12 +243,66 @@ export default function LiveAudio() {
             <button onClick={leave}>Quitter le direct</button>
           )}
 
-          {/* Info pour l'admin qui écoute (petit message explicatif) */}
-          {isAdmin && isOtherBroadcast && connected && (
-            <p className="muted-small">
-              Tu écoutes en tant qu'auditeur (ce n'est pas toi qui diffuses).
-            </p>
-          )}
+          {/* ===== LISTE DES AUDITEURS (visible par TOUT LE MONDE) ===== */}
+          <div className="listeners-section" style={{ marginTop: 24, textAlign: 'left' }}>
+            <h3 style={{ fontSize: 15, color: 'var(--color-teal-dark)' }}>
+              🎧 Auditeurs en direct ({listeners.length})
+            </h3>
+            {listeners.length === 0 ? (
+              <p className="muted-small">Personne n'écoute pour le moment.</p>
+            ) : (
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                {listeners.map((l) => (
+                  <li
+                    key={l.uid}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '8px 0',
+                      borderBottom: '1px solid #eee7d5'
+                    }}
+                  >
+                    {l.photo ? (
+                      <img
+                        src={l.photo}
+                        alt=""
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: '50%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: '50%',
+                          background: 'var(--color-teal)',
+                          color: 'white',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 'bold',
+                          fontSize: 14
+                        }}
+                      >
+                        {(l.name || '?').charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <span style={{ fontSize: 14 }}>
+                      {l.name}
+                      {l.uid === user?.uid && (
+                        <em style={{ color: 'var(--color-text-muted)', fontSize: 12 }}> (toi)</em>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       )}
     </div>
