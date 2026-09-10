@@ -1,21 +1,13 @@
 {
   "rules": {
-    "admins": {
-      ".read": "auth != null",
-      ".write": false,
-      "$uid": {
-        ".validate": "newData.isBoolean() || newData.val() === null"
-      }
-    },
-
     "config": {
       ".read": "auth != null",
-      ".write": "auth != null && root.child('admins').child(auth.uid).exists()"
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
     },
 
     "badges": {
       ".read": "auth != null",
-      ".write": "auth != null && root.child('admins').child(auth.uid).exists()",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
       "$badgeId": {
         ".validate": "newData.hasChildren(['name', 'colors'])",
         "name": { ".validate": "newData.isString() && newData.val().length <= 30" },
@@ -26,7 +18,7 @@
     "users": {
       ".read": "auth != null",
       "$uid": {
-        ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).exists())",
+        ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
         ".validate": "newData.hasChildren(['nom', 'prenom', 'email'])",
         "nom": { ".validate": "newData.isString() && newData.val().length <= 50" },
         "prenom": { ".validate": "newData.isString() && newData.val().length <= 50" },
@@ -53,13 +45,13 @@
     "posts": {
       ".read": "auth != null",
       "culte": {
-        ".write": "auth != null && (root.child('admins').child(auth.uid).exists() || root.child('users').child(auth.uid).child('secteurs').child('actualites').val() === true)",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('secteurs').child('actualites').val() === true)",
         "$postId": {
           ".validate": "newData.hasChildren(['authorUid', 'createdAt', 'expiresAt', 'type'])"
         }
       },
       "travail": {
-        ".write": "auth != null && (root.child('admins').child(auth.uid).exists() || root.child('users').child(auth.uid).child('secteurs').child('infosTravail').val() === true)",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('secteurs').child('infosTravail').val() === true)",
         "$postId": {
           ".validate": "newData.hasChildren(['authorUid', 'createdAt', 'expiresAt', 'type'])"
         }
@@ -82,7 +74,7 @@
       "$id": {
         ".validate": "newData.hasChildren(['authorUid', 'approved', 'createdAt', 'type'])",
         "approved": {
-          ".write": "auth != null && (root.child('admins').child(auth.uid).exists() || root.child('users').child(auth.uid).child('secteurs').child('temoignages').val() === true)"
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('secteurs').child('temoignages').val() === true)"
         }
       }
     },
@@ -105,7 +97,7 @@
             }
           },
           "closed": {
-            ".write": "auth != null && root.child('admins').child(auth.uid).exists()"
+            ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
           }
         }
       }
@@ -114,10 +106,10 @@
     "liveSessions": {
       ".read": "auth != null",
       "current": {
-        ".write": "auth != null && root.child('admins').child(auth.uid).exists()",
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
         "listeners": {
           "$uid": {
-            ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).exists())"
+            ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
           }
         }
       }
