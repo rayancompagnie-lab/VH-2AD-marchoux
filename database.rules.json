@@ -8,7 +8,7 @@
       "$uid": {
         ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
         "role": {
-          ".write": "!data.exists() || root.child('users').child(auth.uid).child('role').val() === 'admin'"
+          ".write": "(!data.exists() && newData.val() === 'member') || root.child('users').child(auth.uid).child('role').val() === 'admin'"
         },
         "premium": {
           ".write": "!data.exists() || root.child('users').child(auth.uid).child('role').val() === 'admin'"

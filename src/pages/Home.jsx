@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { onValue, ref } from 'firebase/database'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
-import { findTribu, findStatut } from '../utils/groups'
+import { TRIBUS, STATUTS, findTribu, findStatut } from '../utils/groups'
 import ServiceDirectory from '../components/ServiceDirectory'
 import PostFeed from '../components/PostFeed'
 import PostComposer from '../components/PostComposer'
@@ -31,45 +31,61 @@ export default function Home() {
     }
   }, [])
 
-  // Un onglet de groupe n'apparaît que si au moins 2 membres partagent le même
-  // critère (tribu, statut, ou badge donné par un admin).
-  const myGroups = useMemo(() => {
+  // Calcule tous les groupes de l'application (tribus, statuts, badges)
+  // qui ont au moins 2 membres.
+  const allGroups = useMemo(() => {
     if (!profile) return []
     const users = Object.values(allUsers)
     const groups = []
 
-    if (profile.tribu) {
-      const count = users.filter((u) => u.tribu === profile.tribu).length
+    // Toutes les tribus qui ont au moins 2 membres
+    TRIBUS.forEach((t) => {
+      const count = users.filter((u) => u.tribu === t.key).length
       if (count >= 2) {
-        const t = findTribu(profile.tribu)
-        groups.push({ path: `tribu-${profile.tribu}`, label: t ? t.label : profile.tribu })
+        groups.push({
+          path: `tribu-${t.key}`,
+          label: t.label,
+          isMine: profile.tribu === t.key
+        })
       }
-    }
+    })
 
-    if (profile.statutRelationnel) {
-      const count = users.filter((u) => u.statutRelationnel === profile.statutRelationnel).length
+    // Tous les statuts qui ont au moins 2 membres
+    STATUTS.forEach((s) => {
+      const count = users.filter((u) => u.statutRelationnel === s.key).length
       if (count >= 2) {
-        const s = findStatut(profile.statutRelationnel)
-        groups.push({ path: `statut-${profile.statutRelationnel}`, label: s ? s.label : profile.statutRelationnel })
+        groups.push({
+          path: `statut-${s.key}`,
+          label: s.label,
+          isMine: profile.statutRelationnel === s.key
+        })
       }
-    }
+    })
 
-    Object.keys(profile.badges || {}).forEach((badgeId) => {
+    // Tous les badges qui ont au moins 2 membres
+    Object.keys(allBadges).forEach((badgeId) => {
       const count = users.filter((u) => u.badges?.[badgeId]).length
       if (count >= 2) {
-        groups.push({ path: `badge-${badgeId}`, label: allBadges[badgeId]?.name || 'Badge' })
+        groups.push({
+          path: `badge-${badgeId}`,
+          label: allBadges[badgeId]?.name || 'Badge',
+          isMine: !!profile.badges?.[badgeId]
+        })
       }
     })
 
     return groups
   }, [profile, allUsers, allBadges])
 
+  // Un admin voit TOUS les groupes, un membre ne voit que les siens.
+  const visibleGroups = isAdmin ? allGroups : allGroups.filter((g) => g.isMine)
+
   const visibleTabs = [
     ...STATIC_TABS.filter((t) => t !== 'Administration' || isAdmin),
-    ...myGroups.map((g) => g.label)
+    ...visibleGroups.map((g) => g.label)
   ]
 
-  const activeGroup = myGroups.find((g) => g.label === tab)
+  const activeGroup = visibleGroups.find((g) => g.label === tab)
 
   return (
     <div className="home">
