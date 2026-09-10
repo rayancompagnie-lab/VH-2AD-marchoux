@@ -59,8 +59,13 @@
     "liveSessions": {
       ".read": "auth != null",
       "current": {
-        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || !data.exists())",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('role').val() === 'semiAdmin' || !data.exists())",
         "listeners": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid"
+          }
+        },
+        "speakers": {
           "$uid": {
             ".write": "auth != null && auth.uid === $uid"
           }
