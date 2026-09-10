@@ -9,8 +9,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "agora-access-token": "^2.0.4",
-    "agora-rtc-sdk-ng": "^4.20.0",
     "firebase": "^10.12.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

@@ -6,7 +6,6 @@ import { findTribu, findStatut } from '../utils/groups'
 import ServiceDirectory from '../components/ServiceDirectory'
 import PostFeed from '../components/PostFeed'
 import PostComposer from '../components/PostComposer'
-import LiveAudio from '../components/LiveAudio'
 import AdminPanel from '../components/AdminPanel'
 import Marketplace from '../components/Marketplace'
 import Testimonies from '../components/Testimonies'
@@ -26,7 +25,6 @@ const STATIC_TABS = [
   'Marché',
   'Témoignages',
   'Présence',
-  'Direct',
   'Mon profil',
   'Rapport de présence',
   'Administration'
@@ -145,7 +143,6 @@ export default function Home() {
         {tab === 'Marché' && <Marketplace />}
         {tab === 'Témoignages' && <Testimonies />}
         {tab === 'Présence' && <Attendance />}
-        {tab === 'Direct' && <LiveAudio />}
         {tab === 'Mon profil' && <MyProfile />}
         {tab === 'Rapport de présence' && isAdmin && <AttendanceReport />}
         {tab === 'Administration' && isAdmin && <AdminPanel />}

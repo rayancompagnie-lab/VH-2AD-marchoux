@@ -39,15 +39,11 @@
         "createdAt": { ".validate": "newData.isNumber() || newData.val() === null" },
         "badges": {
           ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
-          "$badgeId": {
-            ".validate": "newData.isBoolean() || newData.val() === null"
-          }
+          "$badgeId": { ".validate": "newData.isBoolean() || newData.val() === null" }
         },
         "secteurs": {
           ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
-          "$secteurKey": {
-            ".validate": "newData.isBoolean() || newData.val() === null"
-          }
+          "$secteurKey": { ".validate": "newData.isBoolean() || newData.val() === null" }
         },
         "$other": { ".validate": false }
       }
@@ -112,18 +108,6 @@
           },
           "closed": {
             ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
-          }
-        }
-      }
-    },
-
-    "liveSessions": {
-      ".read": "auth != null",
-      "current": {
-        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
-        "listeners": {
-          "$uid": {
-            ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
           }
         }
       }
