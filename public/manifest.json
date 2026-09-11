@@ -1,0 +1,26 @@
+{
+  "name": "Vase d'honneur — 2AD Marchoux",
+  "short_name": "Vase d'honneur",
+  "description": "Application communautaire de l'église Vase d'honneur 2AD Marchoux",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d4f4f",
+  "theme_color": "#0d4f4f",
+  "lang": "fr",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
