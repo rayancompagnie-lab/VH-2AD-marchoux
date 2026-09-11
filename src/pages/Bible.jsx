@@ -7,6 +7,30 @@ const SOUS_ONGLETS = [
   { key: 'quotidien', label: 'Lecture quotidienne', testament: null }
 ]
 
+// Utilitaire : récupère un nom lisible (string) quel que soit le format
+function getBookName(book) {
+  if (!book) return ''
+  if (typeof book.name === 'string') return book.name
+  if (book.name && typeof book.name === 'object') {
+    return book.name.fr || book.name.en || Object.values(book.name)[0] || book.slug
+  }
+  if (typeof book.title === 'string') return book.title
+  if (book.title && typeof book.title === 'object') {
+    return book.title.fr || book.title.en || Object.values(book.title)[0] || book.slug
+  }
+  return book.slug || 'Livre'
+}
+
+// Utilitaire : récupère le slug
+function getBookSlug(book) {
+  return book?.slug || book?.id || book?.key || ''
+}
+
+// Utilitaire : récupère le nombre de chapitres
+function getBookChapters(book) {
+  return book?.chapters || book?.chapter_count || book?.nbChapters || 1
+}
+
 export default function Bible() {
   const [sousOnglet, setSousOnglet] = useState('ancien')
   const [books, setBooks] = useState([])
@@ -26,7 +50,10 @@ export default function Bible() {
     setLoadingBooks(true)
     setError('')
     fetchBooks(testament)
-      .then((list) => setBooks(list))
+      .then((list) => {
+        console.log('[Bible] Livres reçus:', list)
+        setBooks(list)
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoadingBooks(false))
   }, [sousOnglet])
@@ -35,8 +62,11 @@ export default function Bible() {
     if (!selectedBook) return
     setLoadingChapter(true)
     setError('')
-    fetchChapter(selectedBook.slug, chapter)
-      .then((data) => setChapterData(data))
+    fetchChapter(getBookSlug(selectedBook), chapter)
+      .then((data) => {
+        console.log('[Bible] Chapitre reçu:', data)
+        setChapterData(data)
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoadingChapter(false))
   }, [selectedBook, chapter])
@@ -51,13 +81,14 @@ export default function Bible() {
     setChapterData(null)
   }
 
+  // ─── Vue lecture ───
   if (selectedBook) {
-    const totalChapitres = selectedBook.chapters || 1
+    const totalChapitres = getBookChapters(selectedBook)
     return (
       <div className="bible-reader">
         <button className="bible-back" onClick={fermerLecture}>← Retour aux livres</button>
 
-        <h2>{selectedBook.name}</h2>
+        <h2>{getBookName(selectedBook)}</h2>
 
         <div className="bible-nav">
           <button
@@ -86,11 +117,12 @@ export default function Bible() {
 
         {chapterData && (
           <div className="bible-chapter">
-            <h3>Chapitre {chapterData.chapter}</h3>
+            <h3>Chapitre {chapterData.chapter || chapter}</h3>
             <div className="bible-verses">
-              {chapterData.verses?.map((v) => (
-                <p key={v.number} className="bible-verse">
-                  <sup>{v.number}</sup> {v.text}
+              {(chapterData.verses || []).map((v, i) => (
+                <p key={v.number || i} className="bible-verse">
+                  <sup>{v.number || i + 1}</sup>{' '}
+                  {typeof v.text === 'string' ? v.text : (v.text?.fr || JSON.stringify(v.text))}
                 </p>
               ))}
             </div>
@@ -100,6 +132,7 @@ export default function Bible() {
     )
   }
 
+  // ─── Vue liste / quotidien ───
   return (
     <div className="bible-page">
       <h2>📖 Bible</h2>
@@ -131,13 +164,13 @@ export default function Bible() {
           {loadingBooks && <p>Chargement des livres...</p>}
 
           <div className="bible-books">
-            {books.map((b) => (
+            {books.map((b, i) => (
               <button
-                key={b.slug}
+                key={getBookSlug(b) || i}
                 className="bible-book"
                 onClick={() => openBook(b)}
               >
-                {b.name}
+                {getBookName(b)}
               </button>
             ))}
           </div>
