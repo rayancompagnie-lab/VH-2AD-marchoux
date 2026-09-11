@@ -7,16 +7,6 @@ const SOUS_ONGLETS = [
   { key: 'quotidien', label: 'Lecture quotidienne', testament: null }
 ]
 
-// Récupère le texte d'un verset (gère string ou objet multilingue)
-function getVerseText(v) {
-  if (!v) return ''
-  if (typeof v.text === 'string') return v.text
-  if (v.text && typeof v.text === 'object') {
-    return v.text.fr || v.text.en || Object.values(v.text)[0] || ''
-  }
-  return ''
-}
-
 export default function Bible() {
   const [sousOnglet, setSousOnglet] = useState('ancien')
   const [books, setBooks] = useState([])
@@ -64,7 +54,7 @@ export default function Bible() {
   // ─── Vue lecture ───
   if (selectedBook) {
     const totalChapitres = getBookChapters(selectedBook)
-    const verses = chapterData?.verses || chapterData?.verses_list || []
+    const verses = chapterData?.verses || []
 
     return (
       <div className="bible-reader">
@@ -102,9 +92,9 @@ export default function Bible() {
             <h3>Chapitre {chapter}</h3>
             <div className="bible-verses">
               {verses.length === 0 && <p>Aucun verset trouvé.</p>}
-              {verses.map((v, i) => (
-                <p key={v.number || i} className="bible-verse">
-                  <sup>{v.number || i + 1}</sup> {getVerseText(v)}
+              {verses.map((text, i) => (
+                <p key={i} className="bible-verse">
+                  <sup>{i + 1}</sup> {text}
                 </p>
               ))}
             </div>
