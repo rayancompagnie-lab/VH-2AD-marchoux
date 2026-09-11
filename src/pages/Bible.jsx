@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchBooks, fetchChapter, getBookName, getBookSlug, getBookChapters } from '../utils/bibleApi'
+import BibleDailyPlan from '../components/BibleDailyPlan'
 
 const SOUS_ONGLETS = [
   { key: 'ancien', label: 'Ancien Testament', testament: 'old' },
@@ -18,19 +19,25 @@ export default function Bible() {
   const [chapterData, setChapterData] = useState(null)
   const [loadingChapter, setLoadingChapter] = useState(false)
 
+  // Charge les livres une seule fois (les 2 testaments)
   useEffect(() => {
-    if (sousOnglet === 'quotidien') return
-    const testament = SOUS_ONGLETS.find((s) => s.key === sousOnglet)?.testament
-    if (!testament) return
+    async function loadAll() {
+      setLoadingBooks(true)
+      setError('')
+      try {
+        const oldB = await fetchBooks('old')
+        const newB = await fetchBooks('new')
+        setBooks([...oldB, ...newB])
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setLoadingBooks(false)
+      }
+    }
+    loadAll()
+  }, [])
 
-    setLoadingBooks(true)
-    setError('')
-    fetchBooks(testament)
-      .then((list) => setBooks(list))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoadingBooks(false))
-  }, [sousOnglet])
-
+  // Charge un chapitre quand on change de livre ou de chapitre
   useEffect(() => {
     if (!selectedBook) return
     setLoadingChapter(true)
@@ -104,6 +111,14 @@ export default function Bible() {
     )
   }
 
+  // ─── Filtre des livres selon le sous-onglet ───
+  const booksToShow =
+    sousOnglet === 'ancien'
+      ? books.filter((b) => b.testament === 'old')
+      : sousOnglet === 'nouveau'
+        ? books.filter((b) => b.testament === 'new')
+        : books
+
   // ─── Vue liste / quotidien ───
   return (
     <div className="bible-page">
@@ -121,32 +136,31 @@ export default function Bible() {
         ))}
       </div>
 
+      {error && <p className="error">{error}</p>}
+      {loadingBooks && <p>Chargement des livres...</p>}
+
       {sousOnglet === 'quotidien' && (
-        <div className="bible-daily">
-          <p className="muted-small">
-            Choisis un livre et le nombre de jours pour générer ton plan de lecture.
-          </p>
-          <p>Fonctionnalité à venir.</p>
-        </div>
+        <BibleDailyPlan
+          books={books}
+          onOpenChapter={(book, chapitre) => {
+            setSelectedBook(book)
+            setChapter(chapitre)
+          }}
+        />
       )}
 
       {sousOnglet !== 'quotidien' && (
-        <>
-          {error && <p className="error">{error}</p>}
-          {loadingBooks && <p>Chargement des livres...</p>}
-
-          <div className="bible-books">
-            {books.map((b) => (
-              <button
-                key={b.id}
-                className="bible-book"
-                onClick={() => openBook(b)}
-              >
-                {getBookName(b)}
-              </button>
-            ))}
-          </div>
-        </>
+        <div className="bible-books">
+          {booksToShow.map((b) => (
+            <button
+              key={b.id}
+              className="bible-book"
+              onClick={() => openBook(b)}
+            >
+              {getBookName(b)}
+            </button>
+          ))}
+        </div>
       )}
     </div>
   )

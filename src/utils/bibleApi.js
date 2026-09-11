@@ -32,7 +32,18 @@ export function getBookChapters(book) {
 
 // Récupère un chapitre complet
 export async function fetchChapter(bookSlug, chapter) {
-  const url = `${BASE_URL}/${VERSION_FR}/${bookSlug}/${chapter}`
+  // Sécurité : si on reçoit un objet au lieu d'une string
+  let slug = bookSlug
+  if (typeof slug === 'object' && slug !== null) {
+    slug = slug.fr || slug.en || Object.values(slug)[0] || ''
+  }
+  if (!slug || typeof slug !== 'string') {
+    throw new Error('Slug de livre invalide')
+  }
+
+  const url = `${BASE_URL}/${VERSION_FR}/${slug}/${chapter}`
+  console.log('[Bible API] URL appelée :', url)
+
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Chapitre introuvable (${res.status})`)
   const json = await res.json()

@@ -632,120 +632,6 @@ img { max-width: 100%; display: block; height: auto; }
   transform: scale(1.05);
 }
 
-/* ---------- Responsive ---------- */
-@media (max-width: 700px) {
-  /* Topbar : empile proprement, tout centré */
-  .topbar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    padding: 12px 14px;
-  }
-
-  .brand {
-    justify-content: center;
-    text-align: center;
-  }
-
-  .brand h1 {
-    font-size: 14px;
-    white-space: normal;
-    text-align: center;
-  }
-
-  .user-chip {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    align-items: stretch;
-  }
-
-  .user-mini {
-    justify-content: center;
-    width: 100%;
-  }
-
-  .user-mini span {
-    white-space: normal;
-    text-align: center;
-  }
-
-  .logout-btn {
-    width: 100%;
-    padding: 10px;
-  }
-
-  /* Onglets : tous visibles, pas de scroll, adaptés à la largeur */
-  .tabs {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    padding: 10px 10px;
-    gap: 6px;
-  }
-
-  .tab {
-    flex: 0 1 auto;
-    padding: 6px 10px;
-    font-size: 11px;
-    white-space: nowrap;
-  }
-
-  .tab-content {
-    padding: 14px 10px 60px;
-    max-width: 100%;
-  }
-
-  /* Annuaire : s'adapte à la largeur de l'écran (2 minimum) */
-  .member-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 10px;
-  }
-
-  /* Cartes plus compactes */
-  .member-card {
-    padding: 10px;
-  }
-
-  .member-card h3 {
-    font-size: 14px;
-  }
-
-  .member-card .titre,
-  .member-card .service,
-  .member-card .contact,
-  .member-card .lieu {
-    font-size: 12px;
-  }
-
-  .member-avatar {
-    width: 52px;
-    height: 52px;
-  }
-
-  .badge-pill {
-    font-size: 10px;
-    padding: 2px 8px;
-  }
-
-  .contact-btn {
-    font-size: 11px;
-    padding: 6px 8px;
-  }
-
-  /* Avatar picker : s'adapte aussi */
-  .avatar-grid {
-    grid-template-columns: repeat(auto-fit, minmax(42px, 1fr));
-  }
-
-  /* Sécurité anti-débordement */
-  body, html {
-    overflow-x: hidden;
-    max-width: 100%;
-  }
-}
 /* ---------- Bible ---------- */
 .bible-page h2,
 .bible-reader h2 {
@@ -882,4 +768,222 @@ img { max-width: 100%; display: block; height: auto; }
   padding: 20px;
   box-shadow: var(--shadow);
   border-left: 4px solid var(--color-gold);
+}
+
+.bible-daily-form {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.bible-daily-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-teal-dark);
+}
+
+.bible-daily-form select,
+.bible-daily-form input {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd6c8;
+  font-size: 13px;
+  background: #fdfcf9;
+}
+
+.bible-daily-form button {
+  padding: 9px 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--color-crimson);
+  color: white;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.bible-plan-list {
+  margin-top: 16px;
+}
+
+.bible-plan-list h3 {
+  color: var(--color-teal-dark);
+  font-size: 15px;
+  margin-bottom: 10px;
+}
+
+.bible-plan-day {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee7d5;
+}
+
+.bible-plan-day-num {
+  font-weight: 700;
+  color: var(--color-gold);
+  min-width: 60px;
+  font-size: 13px;
+}
+
+.bible-plan-day-btn {
+  background: none;
+  border: none;
+  color: var(--color-teal);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.bible-plan-day-btn:hover {
+  background: #faf7ee;
+  color: var(--color-crimson);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 700px) {
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+
+  .brand {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .brand h1 {
+    font-size: 14px;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .user-chip {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .user-mini {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .user-mini span {
+    white-space: normal;
+    text-align: center;
+  }
+
+  .logout-btn {
+    width: 100%;
+    padding: 10px;
+  }
+
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 10px 10px;
+    gap: 6px;
+  }
+
+  .tab {
+    flex: 0 1 auto;
+    padding: 6px 10px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .tab-content {
+    padding: 14px 10px 60px;
+    max-width: 100%;
+  }
+
+  .member-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+  }
+
+  .member-card {
+    padding: 10px;
+  }
+
+  .member-card h3 {
+    font-size: 14px;
+  }
+
+  .member-card .titre,
+  .member-card .service,
+  .member-card .contact,
+  .member-card .lieu {
+    font-size: 12px;
+  }
+
+  .member-avatar {
+    width: 52px;
+    height: 52px;
+  }
+
+  .badge-pill {
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+
+  .contact-btn {
+    font-size: 11px;
+    padding: 6px 8px;
+  }
+
+  .avatar-grid {
+    grid-template-columns: repeat(auto-fit, minmax(42px, 1fr));
+  }
+
+  /* Bible : adaptations mobile */
+  .bible-books {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+
+  .bible-book {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+
+  .bible-verses {
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .bible-daily-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .bible-daily-form select,
+  .bible-daily-form input,
+  .bible-daily-form button {
+    width: 100%;
+  }
+
+  .bible-plan-day {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  body, html {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
 }
