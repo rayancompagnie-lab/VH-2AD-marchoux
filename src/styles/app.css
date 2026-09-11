@@ -238,7 +238,6 @@ img { max-width: 100%; display: block; height: auto; }
 
 .muted-small { font-size: 12px; color: var(--color-text-muted); }
 
-
 /* ---------- Tabs ---------- */
 .tabs {
   display: flex;
@@ -634,7 +633,7 @@ img { max-width: 100%; display: block; height: auto; }
 }
 
 /* ---------- Responsive ---------- */
-@media (max-width: 600px) {
+@media (max-width: 700px) {
   /* Topbar : empile proprement, tout centré */
   .topbar {
     flex-direction: column;
@@ -677,48 +676,73 @@ img { max-width: 100%; display: block; height: auto; }
     padding: 10px;
   }
 
-  /* Onglets : scrollables horizontalement */
+  /* Onglets : tous visibles, pas de scroll, adaptés à la largeur */
   .tabs {
     display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 10px 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 10px 10px;
     gap: 6px;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-
-  .tabs::-webkit-scrollbar {
-    display: none;
   }
 
   .tab {
-    flex-shrink: 0;
+    flex: 0 1 auto;
+    padding: 6px 10px;
+    font-size: 11px;
+    white-space: nowrap;
   }
 
   .tab-content {
-    padding: 14px 12px 60px;
+    padding: 14px 10px 60px;
     max-width: 100%;
   }
 
-  /* Annuaire : 1 colonne sur mobile */
+  /* Annuaire : s'adapte à la largeur de l'écran (2 minimum) */
   .member-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
   }
 
-  /* Avatar picker : 4 colonnes sur mobile */
+  /* Cartes plus compactes */
+  .member-card {
+    padding: 10px;
+  }
+
+  .member-card h3 {
+    font-size: 14px;
+  }
+
+  .member-card .titre,
+  .member-card .service,
+  .member-card .contact,
+  .member-card .lieu {
+    font-size: 12px;
+  }
+
+  .member-avatar {
+    width: 52px;
+    height: 52px;
+  }
+
+  .badge-pill {
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+
+  .contact-btn {
+    font-size: 11px;
+    padding: 6px 8px;
+  }
+
+  /* Avatar picker : s'adapte aussi */
   .avatar-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(42px, 1fr));
   }
 
-  /* Empêcher le scroll horizontal partout */
+  /* Sécurité anti-débordement */
   body, html {
     overflow-x: hidden;
-  }
-
-  * {
     max-width: 100%;
   }
 }
