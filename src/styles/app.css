@@ -746,3 +746,140 @@ img { max-width: 100%; display: block; height: auto; }
     max-width: 100%;
   }
 }
+/* ---------- Bible ---------- */
+.bible-page h2,
+.bible-reader h2 {
+  color: var(--color-teal-dark);
+  font-size: 19px;
+}
+
+.bible-subtabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.bible-subtab {
+  padding: 8px 14px;
+  border: 1px solid #e6dfc9;
+  border-radius: 20px;
+  background: white;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-teal-dark);
+}
+
+.bible-subtab.active {
+  background: var(--color-teal-dark);
+  border-color: var(--color-teal-dark);
+  color: white;
+}
+
+.bible-books {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.bible-book {
+  padding: 10px 12px;
+  border: 1px solid #e6dfc9;
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-teal-dark);
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.bible-book:hover {
+  background: #faf7ee;
+  border-color: var(--color-gold);
+}
+
+.bible-back {
+  background: none;
+  border: none;
+  color: var(--color-teal);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.bible-nav {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.bible-nav button {
+  padding: 8px 14px;
+  border: 1px solid #e6dfc9;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-teal-dark);
+}
+
+.bible-nav button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.bible-nav select {
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ddd6c8;
+  font-size: 13px;
+  background: #fdfcf9;
+}
+
+.bible-chapter {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  border-top: 4px solid var(--color-gold);
+}
+
+.bible-chapter h3 {
+  color: var(--color-teal-dark);
+  margin-top: 0;
+  font-size: 17px;
+}
+
+.bible-verses {
+  font-family: Georgia, serif;
+  line-height: 1.8;
+  font-size: 15px;
+  color: #2a3a38;
+}
+
+.bible-verse {
+  margin: 0 0 8px 0;
+}
+
+.bible-verse sup {
+  color: var(--color-gold);
+  font-weight: 700;
+  font-size: 11px;
+  margin-right: 4px;
+}
+
+.bible-daily {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--color-gold);
+}
