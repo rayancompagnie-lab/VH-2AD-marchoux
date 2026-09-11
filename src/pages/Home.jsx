@@ -14,25 +14,27 @@ import GroupBoard from '../components/GroupBoard'
 import LeamanBoard from '../components/LeamanBoard'
 import KanegnonBoard from '../components/KanegnonBoard'
 import Avatar from '../components/Avatar'
+import Bible from './Bible'
 import MyProfile from './MyProfile'
 import Attendance from './Attendance'
 import AttendanceReport from '../components/AttendanceReport'
 
 const STATIC_TABS = [
-  'Service',
   'Actualités',
-  'Infos travail',
-  'Marché',
+  'Bible',
   'Témoignages',
   'Présence',
   'Mon profil',
+  'Infos travail',
+  'Marché',
   'Rapport de présence',
+  'Service',
   'Administration'
 ]
 
 export default function Home() {
   const { profile, isSemiAdmin, isAdmin, isPremium, canManage, logout } = useAuth()
-  const [tab, setTab] = useState('Service')
+  const [tab, setTab] = useState('Actualités')
   const [allUsers, setAllUsers] = useState({})
   const [allBadges, setAllBadges] = useState({})
 
@@ -123,7 +125,6 @@ export default function Home() {
       </nav>
 
       <main className="tab-content">
-        {tab === 'Service' && <ServiceDirectory />}
         {tab === 'Actualités' && (
           <div>
             {canManage('actualites') && (
@@ -132,6 +133,10 @@ export default function Home() {
             <PostFeed basePath="posts/culte" canDelete={canManage('actualites')} />
           </div>
         )}
+        {tab === 'Bible' && <Bible />}
+        {tab === 'Témoignages' && <Testimonies />}
+        {tab === 'Présence' && <Attendance />}
+        {tab === 'Mon profil' && <MyProfile />}
         {tab === 'Infos travail' && (
           <div>
             {canManage('infosTravail') && (
@@ -141,10 +146,8 @@ export default function Home() {
           </div>
         )}
         {tab === 'Marché' && <Marketplace />}
-        {tab === 'Témoignages' && <Testimonies />}
-        {tab === 'Présence' && <Attendance />}
-        {tab === 'Mon profil' && <MyProfile />}
         {tab === 'Rapport de présence' && isAdmin && <AttendanceReport />}
+        {tab === 'Service' && <ServiceDirectory />}
         {tab === 'Administration' && isAdmin && <AdminPanel />}
         {tab === 'Leaman' && profile?.sexe === 'femme' && <LeamanBoard />}
         {tab === 'Kanegnon' && profile?.sexe === 'homme' && <KanegnonBoard />}
