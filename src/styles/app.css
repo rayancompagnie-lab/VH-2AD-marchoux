@@ -1027,3 +1027,23 @@ img { max-width: 100%; display: block; height: auto; }
 .bible-plan-check:hover {
   transform: scale(1.15);
 }
+/* ---------- Mode hors ligne ---------- */
+.offline-banner {
+  background: linear-gradient(120deg, #fff3cd, #ffe8a3);
+  border: 1px solid #d4af37;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b5300;
+  text-align: center;
+}
+
+.post-composer .success {
+  background: #e6f7ec;
+  border: 1px solid var(--color-green);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+}
