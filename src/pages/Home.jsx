@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { get, ref } from 'firebase/database'
+import { get as idbGet, set as idbSet } from 'idb-keyval'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { findTribu, findStatut } from '../utils/groups'
@@ -33,23 +34,52 @@ const STATIC_TABS = [
 ]
 
 export default function Home() {
-  const { profile, isSemiAdmin, isAdmin, isPremium, canManage, logout } = useAuth()
+  const { profile, isSemiAdmin, isAdmin, isPremium, canManage, logout, offline } = useAuth()
   const [tab, setTab] = useState('Actualités')
   const [allUsers, setAllUsers] = useState({})
   const [allBadges, setAllBadges] = useState({})
 
   useEffect(() => {
     async function loadData() {
+      // 1. Lecture immédiate depuis IndexedDB (instantané, marche hors ligne)
+      try {
+        const cachedUsers = await idbGet('cache-all-users')
+        if (cachedUsers) setAllUsers(cachedUsers)
+
+        const cachedBadges = await idbGet('cache-all-badges')
+        if (cachedBadges) setAllBadges(cachedBadges)
+      } catch (e) {
+        console.warn('Erreur lecture cache users/badges:', e)
+      }
+
+      // 2. Si hors ligne, on s'arrête là
+      if (!navigator.onLine) {
+        console.log('📵 Hors ligne, données depuis le cache')
+        return
+      }
+
+      // 3. Sinon, on tente Firebase pour rafraîchir
       try {
         const usersSnap = await get(ref(db, 'users'))
-        setAllUsers(usersSnap.val() || {})
+        const usersData = usersSnap.val() || {}
+        setAllUsers(usersData)
+        await idbSet('cache-all-users', usersData)
+
         const badgesSnap = await get(ref(db, 'badges'))
-        setAllBadges(badgesSnap.val() || {})
+        const badgesData = badgesSnap.val() || {}
+        setAllBadges(badgesData)
+        await idbSet('cache-all-badges', badgesData)
       } catch (err) {
-        console.error('Erreur chargement:', err)
+        console.warn('Erreur chargement Firebase (fallback cache):', err)
       }
     }
+
     loadData()
+
+    // Recharge quand on revient en ligne
+    const handleOnline = () => loadData()
+    window.addEventListener('online', handleOnline)
+    return () => window.removeEventListener('online', handleOnline)
   }, [])
 
   const myGroups = useMemo(() => {
@@ -115,6 +145,12 @@ export default function Home() {
           <button className="logout-btn" onClick={logout}>Déconnexion</button>
         </div>
       </header>
+
+      {offline && (
+        <div className="offline-banner">
+          📵 Mode hors ligne — Certaines fonctions sont limitées
+        </div>
+      )}
 
       <nav className="tabs">
         {visibleTabs.map((t) => (

@@ -6,7 +6,13 @@ import CompleteProfile from './pages/CompleteProfile'
 import Home from './pages/Home'
 
 function PrivateRoute({ children }) {
-  const { user, profile, loading } = useAuth()
+  const { user, profile, loading, offline } = useAuth()
+
+  // Si on est hors ligne et qu'on a un profil en cache → on entre
+  if (!loading && offline && user && profile) {
+    return children
+  }
+
   if (loading) return <div className="loading">Chargement...</div>
   if (!user) return <Navigate to="/connexion" replace />
   if (profile && profile.profileComplete === false) {

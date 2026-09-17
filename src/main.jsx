@@ -6,6 +6,7 @@ import { AuthProvider } from './context/AuthContext.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { watchOnlineStatus } from './utils/messagesSync'
 import './styles/app.css'
+import { watchOnlineStatus } from './utils/messagesSync'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -29,3 +30,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </ErrorBoundary>
   </React.StrictMode>
 )
+watchOnlineStatus()
+
+// Recharge l'app quand on revient en ligne
+window.addEventListener('online', () => {
+  console.log('🌐 Retour en ligne')
+  // Force un refresh des données si nécessaire
+})
