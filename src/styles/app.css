@@ -987,3 +987,27 @@ img { max-width: 100%; display: block; height: auto; }
     max-width: 100%;
   }
 }
+/* ---------- Bible : sélecteur de version ---------- */
+.bible-versions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.bible-version {
+  padding: 8px 14px;
+  border: 2px solid var(--color-gold);
+  border-radius: 20px;
+  background: white;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-teal-dark);
+  transition: all 0.15s;
+}
+
+.bible-version.active {
+  background: linear-gradient(120deg, var(--color-gold), var(--color-gold-light));
+  color: var(--color-teal-dark);
+}
