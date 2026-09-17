@@ -8,7 +8,7 @@ import Home from './pages/Home'
 function PrivateRoute({ children }) {
   const { user, profile, loading, offline } = useAuth()
 
-  // Si on est hors ligne et qu'on a un profil en cache → on entre
+  // Hors ligne avec profil en cache → on entre directement
   if (!loading && offline && user && profile) {
     return children
   }

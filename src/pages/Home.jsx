@@ -41,7 +41,7 @@ export default function Home() {
 
   useEffect(() => {
     async function loadData() {
-      // 1. Lecture immédiate depuis IndexedDB (instantané, marche hors ligne)
+      // 1. Lecture immédiate depuis IndexedDB
       try {
         const cachedUsers = await idbGet('cache-all-users')
         if (cachedUsers) setAllUsers(cachedUsers)
@@ -52,13 +52,13 @@ export default function Home() {
         console.warn('Erreur lecture cache users/badges:', e)
       }
 
-      // 2. Si hors ligne, on s'arrête là
+      // 2. Hors ligne → on s'arrête là
       if (!navigator.onLine) {
         console.log('📵 Hors ligne, données depuis le cache')
         return
       }
 
-      // 3. Sinon, on tente Firebase pour rafraîchir
+      // 3. Firebase pour rafraîchir
       try {
         const usersSnap = await get(ref(db, 'users'))
         const usersData = usersSnap.val() || {}
@@ -76,7 +76,6 @@ export default function Home() {
 
     loadData()
 
-    // Recharge quand on revient en ligne
     const handleOnline = () => loadData()
     window.addEventListener('online', handleOnline)
     return () => window.removeEventListener('online', handleOnline)

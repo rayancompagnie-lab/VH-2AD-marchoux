@@ -6,8 +6,8 @@ import { AuthProvider } from './context/AuthContext.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { watchOnlineStatus } from './utils/messagesSync'
 import './styles/app.css'
-import { watchOnlineStatus } from './utils/messagesSync'
 
+// Enregistrement du Service Worker pour la PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
@@ -17,6 +17,7 @@ if ('serviceWorker' in navigator) {
   })
 }
 
+// Écoute le retour en ligne pour envoyer les messages en attente
 watchOnlineStatus()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -30,10 +31,3 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </ErrorBoundary>
   </React.StrictMode>
 )
-watchOnlineStatus()
-
-// Recharge l'app quand on revient en ligne
-window.addEventListener('online', () => {
-  console.log('🌐 Retour en ligne')
-  // Force un refresh des données si nécessaire
-})

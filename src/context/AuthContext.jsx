@@ -7,13 +7,12 @@ import {
   signOut,
   updateProfile
 } from 'firebase/auth'
-import { onValue, ref, serverTimestamp, set, update } from 'firebase/database'
-import { get, set as idbSet, del } from 'idb-keyval'
+import { onValue, ref, set, update } from 'firebase/database'
+import { get as idbGet, set as idbSet } from 'idb-keyval'
 import { auth, db, googleProvider } from '../firebase'
 
 const AuthContext = createContext(null)
 
-// Clé IndexedDB pour le profil utilisateur
 function profileKey(uid) {
   return `user-profile-${uid}`
 }
@@ -36,7 +35,7 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  // Écoute l'auth Firebase
+  // Écoute l'auth Firebase + charge le profil depuis le cache immédiatement
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser)
@@ -47,19 +46,19 @@ export function AuthProvider({ children }) {
         return
       }
 
-      // 🔑 ESSAI 1 : Charger le profil depuis le cache IndexedDB IMMÉDIATEMENT
+      // 🔑 Lecture du profil depuis IndexedDB tout de suite
       try {
-        const cached = await get(profileKey(firebaseUser.uid))
+        const cached = await idbGet(profileKey(firebaseUser.uid))
         if (cached) {
           console.log('📖 Profil lu depuis IndexedDB')
           setProfile(cached)
-          setLoading(false)  // 👈 Débloque l'app tout de suite
+          setLoading(false)
         }
       } catch (e) {
         console.warn('Erreur lecture profil cache:', e)
       }
 
-      // Si on est hors ligne, on s'arrête là (le cache suffit)
+      // Si hors ligne, on s'arrête là
       if (!navigator.onLine) {
         console.log('📵 Hors ligne, on utilise le cache')
         setLoading(false)
@@ -69,7 +68,7 @@ export function AuthProvider({ children }) {
     return unsubscribe
   }, [])
 
-  // Écoute les changements du profil Firebase (uniquement si user)
+  // Écoute les changements du profil Firebase
   useEffect(() => {
     if (!user) return
 
@@ -81,7 +80,6 @@ export function AuthProvider({ children }) {
         setProfile(data)
         setLoading(false)
 
-        // Sauvegarde dans IndexedDB pour la prochaine fois
         if (data) {
           try {
             await idbSet(profileKey(user.uid), data)
@@ -91,7 +89,6 @@ export function AuthProvider({ children }) {
         }
       },
       (err) => {
-        // Erreur Firebase → on continue avec le cache si dispo
         console.warn('Erreur Firebase profil:', err)
         setLoading(false)
       }
@@ -122,7 +119,6 @@ export function AuthProvider({ children }) {
     }
     await set(ref(db, `users/${uid}`), newProfile)
 
-    // Sauvegarde locale immédiate
     try {
       await idbSet(profileKey(uid), newProfile)
     } catch (e) {}
@@ -144,9 +140,8 @@ export function AuthProvider({ children }) {
     }
     await update(ref(db, `users/${uid}`), updates)
 
-    // Mise à jour du cache local
     try {
-      const cached = (await get(profileKey(uid))) || {}
+      const cached = (await idbGet(profileKey(uid))) || {}
       await idbSet(profileKey(uid), { ...cached, ...updates })
     } catch (e) {}
   }
@@ -178,9 +173,7 @@ export function AuthProvider({ children }) {
     return cred.user
   }
 
-  async function logout() {
-    // On garde le profil en cache pour la prochaine connexion
-    // (comme ça si on se reconnecte hors ligne, on a le profil)
+  function logout() {
     return signOut(auth)
   }
 
