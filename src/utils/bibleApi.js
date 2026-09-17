@@ -1,60 +1,190 @@
-// API Midvash — structure multilingue
-// Les champs name/slug/abbrev sont des objets { fr, en, ... }
-const BASE_URL = 'https://api.midvash.com/v1'
-const VERSION_FR = 'lsg' // Louis Segond
+import { useEffect, useState } from 'react'
+import { loadBook } from '../utils/bibleStorage'
+import { getBooksByTestament, getBookLabel } from '../utils/bibleBooks'
+import BibleDailyPlan from '../components/BibleDailyPlan'
 
-export async function fetchBooks(testament) {
-  const url = `${BASE_URL}/books?testament=${testament}`
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`Erreur API (${res.status})`)
-  const json = await res.json()
-  return json.data || []
-}
+const VERSIONS = [
+  { langue: 'fr', slug: 'lsg', label: 'Louis Segond (FR)' },
+  { langue: 'en', slug: 'kjv', label: 'King James Version (EN)' }
+]
 
-// Récupère le nom français d'un livre
-export function getBookName(book) {
-  if (!book) return ''
-  if (typeof book.name === 'string') return book.name
-  return book.name?.fr || book.name?.en || 'Livre'
-}
+const SOUS_ONGLETS = [
+  { key: 'ancien', label: 'Ancien Testament', testament: 'OT' },
+  { key: 'nouveau', label: 'Nouveau Testament', testament: 'NT' },
+  { key: 'quotidien', label: 'Lecture quotidienne', testament: null }
+]
 
-// Récupère le slug français d'un livre
-export function getBookSlug(book) {
-  if (!book) return ''
-  if (typeof book.slug === 'string') return book.slug
-  return book.slug?.fr || book.slug?.en || ''
-}
+export default function Bible() {
+  const [versionIdx, setVersionIdx] = useState(0)
+  const [sousOnglet, setSousOnglet] = useState('ancien')
+  const [selectedBook, setSelectedBook] = useState(null)
+  const [chapter, setChapter] = useState(1)
+  const [chapterData, setChapterData] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-// Récupère le nombre de chapitres
-export function getBookChapters(book) {
-  return book?.chapters || 1
-}
+  const version = VERSIONS[versionIdx]
+  const langue = version.langue
 
-// Récupère un chapitre complet
-export async function fetchChapter(bookSlug, chapter) {
-  // Sécurité : si on reçoit un objet au lieu d'une string
-  let slug = bookSlug
-  if (typeof slug === 'object' && slug !== null) {
-    slug = slug.fr || slug.en || Object.values(slug)[0] || ''
+  // Liste des livres du sous-onglet actif (dépend de la langue)
+  const booksOfTab = SOUS_ONGLETS.find((s) => s.key === sousOnglet)?.testament
+    ? getBooksByTestament(
+        SOUS_ONGLETS.find((s) => s.key === sousOnglet).testament,
+        langue
+      )
+    : []
+
+  // Charge un livre quand on clique dessus
+  async function openBook(bookCode) {
+    setLoading(true)
+    setError('')
+    try {
+      const book = await loadBook(langue, version.slug, bookCode)
+      setSelectedBook(book)
+      setChapter(1)
+      setChapterData(book.chapters?.[0] || null)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
-  if (!slug || typeof slug !== 'string') {
-    throw new Error('Slug de livre invalide')
+
+  // Change de chapitre
+  function goToChapter(num) {
+    if (!selectedBook) return
+    const ch = selectedBook.chapters?.[num - 1] || null
+    setChapter(num)
+    setChapterData(ch)
   }
 
-  const url = `${BASE_URL}/${VERSION_FR}/${slug}/${chapter}`
-  console.log('[Bible API] URL appelée :', url)
+  function fermerLecture() {
+    setSelectedBook(null)
+    setChapterData(null)
+  }
 
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`Chapitre introuvable (${res.status})`)
-  const json = await res.json()
-  return json.data
-}
+  // Change de version : referme le livre ouvert
+  function changeVersion(idx) {
+    setVersionIdx(idx)
+    setSelectedBook(null)
+    setChapterData(null)
+  }
 
-// Récupère un verset précis
-export async function fetchVerse(bookSlug, chapter, verse) {
-  const url = `${BASE_URL}/${VERSION_FR}/${bookSlug}/${chapter}/${verse}`
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`Verset introuvable (${res.status})`)
-  const json = await res.json()
-  return json.data
+  // ─── Vue lecture ───
+  if (selectedBook) {
+    const totalChapitres = selectedBook.chapters?.length || 1
+    const verses = chapterData?.verses || []
+
+    return (
+      <div className="bible-reader">
+        <button className="bible-back" onClick={fermerLecture}>← Retour aux livres</button>
+
+        <h2>{getBookLabel(selectedBook.book, langue)}</h2>
+
+        <div className="bible-nav">
+          <button
+            disabled={chapter <= 1}
+            onClick={() => goToChapter(chapter - 1)}
+          >
+            ← Précédent
+          </button>
+
+          <select
+            value={chapter}
+            onChange={(e) => goToChapter(Number(e.target.value))}
+          >
+            {Array.from({ length: totalChapitres }, (_, i) => i + 1).map((n) => (
+              <option key={n} value={n}>Chapitre {n}</option>
+            ))}
+          </select>
+
+          <button
+            disabled={chapter >= totalChapitres}
+            onClick={() => goToChapter(chapter + 1)}
+          >
+            Suivant →
+          </button>
+        </div>
+
+        {error && <p className="error">{error}</p>}
+
+        {chapterData && (
+          <div className="bible-chapter">
+            <h3>Chapitre {chapter}</h3>
+            <div className="bible-verses">
+              {verses.length === 0 && <p>Aucun verset trouvé.</p>}
+              {verses.map((v) => (
+                <p key={v.number} className="bible-verse">
+                  <sup>{v.number}</sup> {v.text}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ─── Vue liste / quotidien ───
+  return (
+    <div className="bible-page">
+      <h2>📖 Bible</h2>
+
+      {/* Sélecteur de version */}
+      <div className="bible-versions">
+        {VERSIONS.map((v, i) => (
+          <button
+            key={v.slug}
+            className={i === versionIdx ? 'bible-version active' : 'bible-version'}
+            onClick={() => changeVersion(i)}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="bible-subtabs">
+        {SOUS_ONGLETS.map((s) => (
+          <button
+            key={s.key}
+            className={sousOnglet === s.key ? 'bible-subtab active' : 'bible-subtab'}
+            onClick={() => setSousOnglet(s.key)}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {error && <p className="error">{error}</p>}
+      {loading && <p>Chargement...</p>}
+
+      {sousOnglet === 'quotidien' && (
+        <BibleDailyPlan
+          books={[
+            ...getBooksByTestament('OT', langue),
+            ...getBooksByTestament('NT', langue)
+          ]}
+          onOpenChapter={(book, chapitre) => {
+            openBook(book.code).then(() => {
+              setTimeout(() => goToChapter(chapitre), 100)
+            })
+          }}
+        />
+      )}
+
+      {sousOnglet !== 'quotidien' && (
+        <div className="bible-books">
+          {booksOfTab.map((b) => (
+            <button
+              key={b.code}
+              className="bible-book"
+              onClick={() => openBook(b.code)}
+            >
+              {b.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
