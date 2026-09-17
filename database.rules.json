@@ -36,6 +36,15 @@
         "role": { ".validate": "newData.val() === 'member' || newData.val() === 'semiAdmin' || newData.val() === 'admin'" },
         "premium": { ".validate": "newData.isBoolean()" },
         "profileComplete": { ".validate": "newData.isBoolean()" },
+        "biblePlan": {
+  ".validate": "newData.hasChildren(['bookCode', 'nbJours', 'startDate'])",
+  "bookCode": { ".validate": "newData.isString()" },
+  "bookLabel": { ".validate": "newData.isString()" },
+  "nbJours": { ".validate": "newData.isNumber()" },
+  "startDate": { ".validate": "newData.isString()" },
+  "completedDays": { ".validate": "newData.hasChildren() || newData.val() === null" },
+  "createdAt": { ".validate": "newData.isNumber()" }
+},
         "createdAt": { ".validate": "newData.isNumber() || newData.val() === null" },
         "badges": {
           ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",

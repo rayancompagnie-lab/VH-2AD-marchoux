@@ -1011,3 +1011,19 @@ img { max-width: 100%; display: block; height: auto; }
   background: linear-gradient(120deg, var(--color-gold), var(--color-gold-light));
   color: var(--color-teal-dark);
 }
+.bible-plan-check {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+}
+
+.bible-plan-check.read {
+  opacity: 0.6;
+}
+
+.bible-plan-check:hover {
+  transform: scale(1.15);
+}
