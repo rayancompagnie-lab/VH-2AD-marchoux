@@ -1,4 +1,4 @@
-# Vase d'honneur — 2AD Marchoux
+# Vases d'Honneur — 2AD Marchoux
 
 Application communautaire d'église : annuaire des services, informations liées au culte (texte/vocal), infos travail (texte/image), direct audio, rôles admin/semi-admin, badges.
 
@@ -54,7 +54,7 @@ Aucun compte n'est admin par défaut. Après ta première inscription :
 cd vase-honneur
 git init
 git add .
-git commit -m "Première version - Vase d'honneur 2AD Marchoux"
+git commit -m "Première version - Vases d'Honneur 2AD Marchoux"
 git branch -M main
 git remote add origin https://github.com/TON_COMPTE/vase-honneur.git
 git push -u origin main

@@ -11,7 +11,7 @@ export default function PremiumBadge({ show, canRequest, name }) {
         className="premium-request-badge"
         href={toWhatsappLink(
           PREMIUM_WHATSAPP,
-          `Bonjour, je souhaite passer au mode Premium sur Vase d'honneur (compte : ${name || ''}).`
+          `Bonjour, je souhaite passer au mode Premium sur Vases d'Honneur (compte : ${name || ''}).`
         )}
         target="_blank"
         rel="noreferrer"

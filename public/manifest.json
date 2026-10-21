@@ -1,7 +1,7 @@
 {
-  "name": "Vase d'honneur — 2AD Marchoux",
-  "short_name": "Vase d'honneur",
-  "description": "Application communautaire de l'église Vase d'honneur 2AD Marchoux",
+  "name": "Vases d'Honneur — 2AD Marchoux",
+  "short_name": "Vases d'Honneur",
+  "description": "Application communautaire de l'église Vases d'Honneur 2AD Marchoux",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

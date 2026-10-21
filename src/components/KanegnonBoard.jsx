@@ -58,7 +58,7 @@ export default function KanegnonBoard() {
     <div className="kanegnon-board">
       <h2 style={{ color: 'var(--color-teal-dark)' }}>🛡️ Kanegnon</h2>
       <p className="muted-small" style={{ marginBottom: 16 }}>
-        L'espace des hommes de Vase d'honneur
+        L'espace des hommes de Vases d'Honneur
       </p>
 
       <form onSubmit={handleSubmit} className="post-composer">

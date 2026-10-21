@@ -76,7 +76,7 @@ export default function LeamanBoard() {
           🌸 Leaman 🌸
         </h2>
         <p style={{ color: '#a05a6f', fontStyle: 'italic', fontSize: 13, margin: 5 }}>
-          L'espace des femmes de Vase d'honneur
+          L'espace des femmes de Vases d'Honneur
         </p>
       </div>
 

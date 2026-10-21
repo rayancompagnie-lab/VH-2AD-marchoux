@@ -130,8 +130,8 @@ export default function Home() {
     <div className="home">
       <header className="topbar">
         <div className="brand">
-          <img src="/logo.png" alt="Vase d'honneur" className="logo" />
-          <h1>Vase d'honneur — 2AD Marchoux</h1>
+          <img src="/logo.png" alt="Vases d'Honneur" className="logo" />
+          <h1>Vases d'Honneur — 2AD Marchoux</h1>
         </div>
         <div className="user-chip">
           <button className="user-mini" onClick={() => setTab('Mon profil')} title="Voir mon profil">

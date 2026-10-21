@@ -33,7 +33,7 @@ export default function Login() {
 
   return (
     <div className="auth-page">
-      <h1>Vase d'honneur — 2AD Marchoux</h1>
+      <h1>Vases d'Honneur — 2AD Marchoux</h1>
       <form onSubmit={handleSubmit} className="auth-form">
         <h2>Connexion</h2>
         {error && <p className="error">{error}</p>}

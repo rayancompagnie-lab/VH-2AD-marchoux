@@ -192,7 +192,7 @@ export default function Marketplace() {
                 className="contact-btn"
                 href={toWhatsappLink(
                   PREMIUM_WHATSAPP,
-                  `Bonjour, je souhaite passer au mode Premium sur Vase d'honneur (compte : ${profile?.prenom} ${profile?.nom}).`
+                  `Bonjour, je souhaite passer au mode Premium sur Vases d'Honneur (compte : ${profile?.prenom} ${profile?.nom}).`
                 )}
                 target="_blank"
                 rel="noreferrer"
@@ -230,7 +230,7 @@ export default function Marketplace() {
             {a.authorContact && (
               <a
                 className="order-btn"
-                href={toWhatsappLink(a.authorContact, `Bonjour, je suis intéressé(e) par "${a.titre}" vu sur Vase d'honneur.`)}
+                href={toWhatsappLink(a.authorContact, `Bonjour, je suis intéressé(e) par "${a.titre}" vu sur Vases d'Honneur.`)}
                 target="_blank"
                 rel="noreferrer"
               >
