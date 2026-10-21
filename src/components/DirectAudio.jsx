@@ -11,13 +11,49 @@ export default function DirectAudio() {
   const [joined, setJoined] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
   const [isHost, setIsHost] = useState(false)
-  const [auditeurs, setAuditeurs] = useState([]) // Liste des auditeurs en temps réel
+  const [auditeurs, setAuditeurs] = useState([])
   
   const clientRef = useRef(null)
   const localAudioTrackRef = useRef(null)
-  const auditeursRef = useRef([]) // Pour garder la trace pour l'historique
+  const auditeursRef = useRef([])
 
-  // 1. Écouter l'état du direct dans Firebase
+  // 1. Fonction de nettoyage (si on quitte la page brutalement)
+  const cleanupFirebase = async () => {
+    if (isHost && user) {
+      const liveSnap = await new Promise((resolve) => {
+        onValue(ref(db, 'live/direct'), resolve, { onlyOnce: true })
+      })
+      const data = liveSnap.val()
+      
+      // Si c'est bien notre direct qu'on a oublié de fermer
+      if (data?.active && data.hostUid === user.uid) {
+        await push(ref(db, 'live/historique'), {
+          hostUid: user.uid,
+          hostName: `${profile.prenom} ${profile.nom}`,
+          startedAt: data.startedAt || Date.now(),
+          endedAt: Date.now(),
+          auditeurs: auditeursRef.current
+        })
+        await remove(ref(db, 'live/direct'))
+        await remove(ref(db, 'live/auditeurs'))
+      }
+    }
+  }
+
+  // 2. Détecter si on ferme l'onglet ou recharge la page
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (isHost) cleanupFirebase()
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      // Nettoyage si le composant est démonté (changement d'onglet)
+      if (isHost) cleanupFirebase()
+    }
+  }, [isHost, user])
+
+  // 3. Écouter l'état du direct dans Firebase
   useEffect(() => {
     const unsub = onValue(ref(db, 'live/direct'), (snap) => {
       const data = snap.val()
@@ -31,19 +67,19 @@ export default function DirectAudio() {
     return unsub
   }, [joined])
 
-  // 2. Écouter la liste des auditeurs (pour l'hôte et les autres admins)
+  // 4. Écouter la liste des auditeurs
   useEffect(() => {
     if (!liveData?.active) return
     const unsub = onValue(ref(db, 'live/auditeurs'), (snap) => {
       const data = snap.val() || {}
       const list = Object.values(data)
       setAuditeurs(list)
-      auditeursRef.current = list // On sauvegarde pour l'historique
+      auditeursRef.current = list
     })
     return unsub
   }, [liveData?.active])
 
-  // 3. Charger le SDK
+  // 5. Charger le SDK
   useEffect(() => {
     if (window.AgoraRTC) return
     const script = document.createElement('script')
@@ -66,9 +102,7 @@ export default function DirectAudio() {
 
       client.on('user-published', async (user, mediaType) => {
         await client.subscribe(user, mediaType)
-        if (mediaType === 'audio') {
-          user.audioTrack.play()
-        }
+        if (mediaType === 'audio') user.audioTrack.play()
       })
 
       await client.join(data.appId, data.channel, data.token, data.uid)
@@ -80,7 +114,6 @@ export default function DirectAudio() {
         localAudioTrackRef.current = localAudioTrack
         await client.publish([localAudioTrack])
         
-        // On sauvegarde QUI est l'hôte
         await set(ref(db, 'live/direct'), {
           active: true,
           hostUid: user.uid,
@@ -89,11 +122,9 @@ export default function DirectAudio() {
         })
         setIsHost(true)
       } else {
-        // Si c'est un auditeur, on l'ajoute à la liste dans Firebase
         await set(ref(db, `live/auditeurs/${user.uid}`), {
           uid: user.uid,
           name: `${profile.prenom} ${profile.nom}`,
-          avatarId: profile.avatarId || '',
           joinedAt: Date.now()
         })
       }
@@ -106,27 +137,22 @@ export default function DirectAudio() {
   }
 
   async function leaveChannel(updateFirebase = true) {
-    // 1. Si on est auditeur, on se retire de la liste
     if (updateFirebase && !isHost) {
       await remove(ref(db, `live/auditeurs/${user.uid}`))
     }
 
-    // 2. Couper le micro
     if (localAudioTrackRef.current) {
       localAudioTrackRef.current.stop()
       localAudioTrackRef.current.close()
       localAudioTrackRef.current = null
     }
 
-    // 3. Quitter Agora
     if (clientRef.current) {
       await clientRef.current.leave()
       clientRef.current = null
     }
 
-    // 4. Si l'hôte quitte, on sauvegarde l'historique et on supprime le direct
     if (updateFirebase && isHost) {
-      // On enregistre dans l'historique les auditeurs présents
       await push(ref(db, 'live/historique'), {
         hostUid: user.uid,
         hostName: `${profile.prenom} ${profile.nom}`,
@@ -134,8 +160,6 @@ export default function DirectAudio() {
         endedAt: Date.now(),
         auditeurs: auditeursRef.current
       })
-
-      // On nettoie le direct
       await remove(ref(db, 'live/direct'))
       await remove(ref(db, 'live/auditeurs'))
     }
@@ -156,11 +180,30 @@ export default function DirectAudio() {
 
   const isLive = !!liveData?.active
   const canStartDirect = isAdmin && !isLive
+  const amITheHostButNotConnected = isLive && liveData?.hostUid === user.uid && !joined
 
   return (
     <div className="direct-audio" style={{ textAlign: 'center', padding: 20 }}>
       <h2>🎙️ Direct Audio</h2>
       {error && <p className="error">{error}</p>}
+
+      {/* CAS PARTICULIER : Le direct est bloqué sur mon compte mais je ne suis pas connecté */}
+      {amITheHostButNotConnected && (
+        <div style={{ background: '#fff3cd', padding: 16, borderRadius: 8, marginBottom: 20 }}>
+          <p style={{ color: 'var(--color-crimson-dark)', fontWeight: 'bold' }}>
+            ⚠️ Vous avez un ancien direct resté ouvert.
+          </p>
+          <button 
+            onClick={async () => {
+              await remove(ref(db, 'live/direct'))
+              await remove(ref(db, 'live/auditeurs'))
+            }}
+            style={{ background: 'var(--color-crimson)', color: 'white', padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer' }}
+          >
+            Forcer la fermeture
+          </button>
+        </div>
+      )}
 
       {/* VUE : AUCUN DIRECT EN COURS */}
       {!isLive && !joined && (
@@ -175,7 +218,7 @@ export default function DirectAudio() {
       )}
 
       {/* VUE : UN DIRECT EST EN COURS (Auditeur qui veut rejoindre) */}
-      {isLive && !joined && (
+      {isLive && !joined && !amITheHostButNotConnected && (
         <div>
           <p style={{ color: 'var(--color-crimson)', fontWeight: 'bold' }}>
             🔴 En direct maintenant avec {liveData?.hostName} !
@@ -204,7 +247,6 @@ export default function DirectAudio() {
             </button>
           </div>
 
-          {/* LISTE DES AUDITEURS (Visible par l'hôte et les admins) */}
           {(isHost || isAdmin) && (
             <div style={{ background: '#faf7ee', padding: 16, borderRadius: 12, maxWidth: 300, margin: '0 auto', border: '1px solid #ddd6c8' }}>
               <h3 style={{ margin: 0, fontSize: 16, color: 'var(--color-teal-dark)' }}>
