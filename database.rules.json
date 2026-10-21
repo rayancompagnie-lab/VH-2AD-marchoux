@@ -173,7 +173,20 @@
       ".read": "auth != null",
       "direct": {
         ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
-        ".validate": "newData.hasChildren(['active', 'hostName', 'startedAt']) || newData.val() === null"
+        ".validate": "newData.hasChildren(['active', 'hostUid', 'hostName', 'startedAt', 'lastPing']) || newData.val() === null"
+      },
+      "auditeurs": {
+        ".write": "auth != null",
+        "$uid": {
+          ".validate": "newData.hasChildren(['uid', 'name', 'joinedAt']) || newData.val() === null"
+        }
+      },
+      "historique": {
+        ".read": "auth != null",
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        "$id": {
+          ".validate": "newData.hasChildren(['hostUid', 'hostName', 'startedAt', 'endedAt', 'auditeurs'])"
+        }
       }
     },
 
