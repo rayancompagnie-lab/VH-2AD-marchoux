@@ -12,8 +12,8 @@ export default function DirectAudio() {
   const [isMuted, setIsMuted] = useState(false)
   
   const clientRef = useRef(null)
+  const localAudioTrackRef = useRef(null) // On garde une référence à notre micro
 
-  // 1. Écouter si un direct est en cours (dans Firebase)
   useEffect(() => {
     const unsub = onValue(ref(db, 'live/direct'), (snap) => {
       const data = snap.val()
@@ -23,7 +23,6 @@ export default function DirectAudio() {
     return unsub
   }, [])
 
-  // 2. Charger le SDK Agora dynamiquement
   useEffect(() => {
     if (window.AgoraRTC) return
     const script = document.createElement('script')
@@ -32,16 +31,14 @@ export default function DirectAudio() {
     document.body.appendChild(script)
   }, [])
 
-  // 3. Fonction pour rejoindre le direct (Auditeur ou Hôte)
   async function joinChannel(asHost = false) {
     if (!window.AgoraRTC) {
-      setError("SDK Agora en cours de chargement, réessaie dans 2 secondes.")
+      setError("SDK Agora en cours de chargement...")
       return
     }
     setError('')
     
     try {
-      // Récupérer le token depuis notre API Vercel
       const res = await fetch(`/api/agora-token?role=${asHost ? 'host' : 'audience'}`)
       const data = await res.json()
       if (data.error) throw new Error(data.error)
@@ -49,7 +46,7 @@ export default function DirectAudio() {
       const client = window.AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' })
       clientRef.current = client
 
-      // Événements Agora
+      // ÉCOUTE DES AUTRES
       client.on('user-published', async (user, mediaType) => {
         await client.subscribe(user, mediaType)
         if (mediaType === 'audio') {
@@ -57,13 +54,19 @@ export default function DirectAudio() {
         }
       })
 
-      // Rejoindre le canal
       await client.join(data.appId, data.channel, data.token, data.uid)
 
-      // Si c'est l'hôte, on active le micro
+      // SI C'EST L'HÔTE
       if (asHost) {
-        const localAudioTrack = await window.AgoraRTC.createMicrophoneAudioTrack()
+        const localAudioTrack = await window.AgoraRTC.createMicrophoneAudioTrack({
+          AEC: true, // Active l'annulation d'écho
+          ANS: true  // Active la suppression de bruit
+        })
+        localAudioTrackRef.current = localAudioTrack // On sauvegarde la piste
+        
+        // ⚠️ IMPORTANT : On publie le son MAIS on ne le joue pas en local (playAudio = false par défaut)
         await client.publish([localAudioTrack])
+        
         await set(ref(db, 'live/direct'), {
           active: true,
           hostName: `${profile.prenom} ${profile.nom}`,
@@ -78,30 +81,37 @@ export default function DirectAudio() {
     }
   }
 
-  // 4. Quitter le direct
   async function leaveChannel() {
+    // 1. Couper et détruire le micro physique
+    if (localAudioTrackRef.current) {
+      localAudioTrackRef.current.stop()
+      localAudioTrackRef.current.close()
+      localAudioTrackRef.current = null
+    }
+
+    // 2. Quitter le canal
     if (clientRef.current) {
       await clientRef.current.leave()
       clientRef.current = null
     }
+
     if (isAdmin) {
       await remove(ref(db, 'live/direct'))
     }
     setJoined(false)
+    setIsMuted(false)
   }
 
-  // 5. Couper / Activer le micro (Hôte)
+  // Fonction Muet corrigée
   async function toggleMute() {
-    if (!clientRef.current) return
-    const localTracks = clientRef.current.localTracks
-    if (localTracks && localTracks.length > 0) {
-      if (isMuted) {
-        await localTracks[0].setMuted(false)
-      } else {
-        await localTracks[0].setMuted(true)
-      }
-      setIsMuted(!isMuted)
+    if (!localAudioTrackRef.current) return
+    
+    if (isMuted) {
+      await localAudioTrackRef.current.setMuted(false) // Réactiver le son
+    } else {
+      await localAudioTrackRef.current.setMuted(true) // Couper le son
     }
+    setIsMuted(!isMuted)
   }
 
   if (loading) return <p>Chargement...</p>
@@ -111,7 +121,6 @@ export default function DirectAudio() {
       <h2>🎙️ Direct Audio</h2>
       {error && <p className="error">{error}</p>}
 
-      {/* VUE : Personne n'est en direct */}
       {!isLive && !joined && (
         <div>
           <p className="muted-small">Aucun direct en cours pour le moment.</p>
@@ -123,7 +132,6 @@ export default function DirectAudio() {
         </div>
       )}
 
-      {/* VUE : Un direct est en cours (Auditeur) */}
       {isLive && !joined && (
         <div>
           <p style={{ color: 'var(--color-crimson)', fontWeight: 'bold' }}>🔴 En direct maintenant !</p>
@@ -133,16 +141,15 @@ export default function DirectAudio() {
         </div>
       )}
 
-      {/* VUE : Connecté au direct */}
       {joined && (
         <div>
           <p style={{ color: 'var(--color-green)', fontWeight: 'bold' }}>✅ Connecté au direct</p>
           {isAdmin && (
-             <button onClick={toggleMute} style={{ marginRight: 10 }}>
+             <button onClick={toggleMute} style={{ marginRight: 10, padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', background: isMuted ? 'var(--color-crimson)' : 'var(--color-green)', color: 'white' }}>
                {isMuted ? '🎙️ Activer le micro' : '🔇 Couper le micro'}
              </button>
           )}
-          <button onClick={leaveChannel} style={{ background: 'var(--color-crimson)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 8 }}>
+          <button onClick={leaveChannel} style={{ background: 'var(--color-crimson-dark)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 8 }}>
             Quitter
           </button>
         </div>
