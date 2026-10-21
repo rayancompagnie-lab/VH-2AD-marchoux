@@ -12,12 +12,12 @@ export default function PostComposer({ basePath, defaultDurationHours = 24 }) {
   const [sending, setSending] = useState(false)
 
   async function handleImagesChange(e) {
-    const files = Array.from(e.target.files).slice(0, 2) // max 2 images
+    const files = Array.from(e.target.files).slice(0, 1) // ✅ 1 seule image max
     try {
-      const base64s = await Promise.all(files.map((f) => fileToResizedBase64(f, 800, 0.6)))
+      const base64s = await Promise.all(files.map((f) => fileToResizedBase64(f, 600, 0.5))) // ✅ Compression max
       for (const b64 of base64s) {
-        if (isImageTooLarge(b64, 150)) { // Max 150 Ko
-          setError("Image trop lourde (max 150 Ko).")
+        if (isImageTooLarge(b64, 100)) { // ✅ Max 100 Ko
+          setError("Image trop lourde. Choisis une image plus simple.")
           return
         }
       }
@@ -30,10 +30,7 @@ export default function PostComposer({ basePath, defaultDurationHours = 24 }) {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    if (!text && images.length === 0) {
-      setError('Ajoute un texte ou une image.')
-      return
-    }
+    if (!text && images.length === 0) return setError('Ajoute un texte ou une image.')
 
     setSending(true)
     try {
@@ -51,7 +48,7 @@ export default function PostComposer({ basePath, defaultDurationHours = 24 }) {
       setText('')
       setImages([])
     } catch (err) {
-      setError("Échec de l'envoi.")
+      setError("Échec de l'envoi (fichier trop lourd ?).")
     } finally {
       setSending(false)
     }
@@ -60,29 +57,13 @@ export default function PostComposer({ basePath, defaultDurationHours = 24 }) {
   return (
     <form className="post-composer" onSubmit={handleSubmit}>
       {error && <p className="error">{error}</p>}
-      
-      <textarea
-        placeholder="Écris ton message..."
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-      />
-
+      <textarea placeholder="Écris ton message..." value={text} onChange={(e) => setText(e.target.value)} />
       <label className="photo-field">
-        📷 Ajouter des photos (max 2)
-        <input type="file" accept="image/*" multiple onChange={handleImagesChange} />
+        📷 Ajouter une photo (optionnel)
+        <input type="file" accept="image/*" onChange={handleImagesChange} />
       </label>
-      
-      {images.length > 0 && (
-        <div style={{ display: 'flex', gap: 8 }}>
-          {images.map((img, i) => (
-            <img key={i} src={img} alt="Aperçu" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 6 }} />
-          ))}
-        </div>
-      )}
-
-      <button type="submit" disabled={sending}>
-        {sending ? 'Envoi...' : 'Publier'}
-      </button>
+      {images.length > 0 && <img src={images[0]} alt="Aperçu" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8, marginTop: 8 }} />}
+      <button type="submit" disabled={sending}>{sending ? 'Envoi...' : 'Publier'}</button>
     </form>
   )
 }
