@@ -2,50 +2,56 @@ import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { computeExpiresAt } from '../utils/ttl'
 import { sendMessage } from '../utils/messagesSync'
+import { fileToResizedBase64, isImageTooLarge } from '../utils/images'
 
 export default function PostComposer({ basePath, defaultDurationHours = 24 }) {
   const { user, profile } = useAuth()
   const [text, setText] = useState('')
-  const [durationHours, setDurationHours] = useState(defaultDurationHours)
+  const [images, setImages] = useState([])
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
-  const [info, setInfo] = useState('')
+
+  async function handleImagesChange(e) {
+    const files = Array.from(e.target.files).slice(0, 2) // max 2 images
+    try {
+      const base64s = await Promise.all(files.map((f) => fileToResizedBase64(f, 800, 0.6)))
+      for (const b64 of base64s) {
+        if (isImageTooLarge(b64, 150)) { // Max 150 Ko
+          setError("Image trop lourde (max 150 Ko).")
+          return
+        }
+      }
+      setImages(base64s)
+    } catch (err) {
+      setError("Erreur avec l'image.")
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    setInfo('')
-
-    if (!text) {
-      setError('Ajoute un texte.')
+    if (!text && images.length === 0) {
+      setError('Ajoute un texte ou une image.')
       return
     }
 
     setSending(true)
     try {
-      const expiresAt = computeExpiresAt({ durationHours })
-
       await sendMessage(basePath, {
         authorUid: user.uid,
         authorName: `${profile?.prenom || ''} ${profile?.nom || ''}`.trim(),
         authorAvatarId: profile?.avatarId || '',
-        type: 'texte',
+        type: images.length > 0 ? 'image' : 'texte',
         content: text,
+        images: images.length > 0 ? images : null,
         createdAt: Date.now(),
-        expiresAt,
+        expiresAt: computeExpiresAt({ durationHours: defaultDurationHours }),
         reactions: {}
       })
-
-      if (!navigator.onLine) {
-        setInfo('📵 Message enregistré hors ligne. Il sera envoyé dès que tu seras reconnecté.')
-      } else {
-        setInfo('✅ Message publié.')
-      }
-
       setText('')
-      setTimeout(() => setInfo(''), 4000)
+      setImages([])
     } catch (err) {
-      setError("Échec de l'envoi. Réessaie.")
+      setError("Échec de l'envoi.")
     } finally {
       setSending(false)
     }
@@ -54,23 +60,25 @@ export default function PostComposer({ basePath, defaultDurationHours = 24 }) {
   return (
     <form className="post-composer" onSubmit={handleSubmit}>
       {error && <p className="error">{error}</p>}
-      {info && <p className="success">{info}</p>}
-
+      
       <textarea
         placeholder="Écris ton message..."
         value={text}
         onChange={(e) => setText(e.target.value)}
       />
 
-      <label>
-        Durée de vie du post (heures) :
-        <input
-          type="number"
-          min="1"
-          value={durationHours}
-          onChange={(e) => setDurationHours(Number(e.target.value))}
-        />
+      <label className="photo-field">
+        📷 Ajouter des photos (max 2)
+        <input type="file" accept="image/*" multiple onChange={handleImagesChange} />
       </label>
+      
+      {images.length > 0 && (
+        <div style={{ display: 'flex', gap: 8 }}>
+          {images.map((img, i) => (
+            <img key={i} src={img} alt="Aperçu" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 6 }} />
+          ))}
+        </div>
+      )}
 
       <button type="submit" disabled={sending}>
         {sending ? 'Envoi...' : 'Publier'}
