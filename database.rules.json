@@ -5,13 +5,49 @@
       ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
     },
 
-    "badges": {
+    "tribus": {
+      ".read": "auth != null",
+      "$tribuKey": {
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        "patriarcheUid": {
+          ".validate": "newData.isString() || newData.val() === null"
+        },
+        "$other": { ".validate": false }
+      }
+    },
+
+    "cultes": {
       ".read": "auth != null",
       ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
-      "$badgeId": {
-        ".validate": "newData.hasChildren(['name', 'colors'])",
-        "name": { ".validate": "newData.isString() && newData.val().length <= 30" },
-        "colors": { ".validate": "newData.isString() || newData.hasChildren()" }
+      "$culteId": {
+        ".validate": "newData.hasChildren(['theme', 'date', 'type', 'createdBy', 'createdAt'])",
+        "theme":  { ".validate": "newData.isString() && newData.val().length <= 100" },
+        "date":   { ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}$/)" },
+        "heure":  { ".validate": "newData.isString() && newData.val().length <= 5" },
+        "type":   { ".validate": "newData.val() === 'dimanche' || newData.val() === 'mercredi' || newData.val() === 'special'" },
+        "closed": { ".validate": "newData.isBoolean() || newData.val() === null" },
+        "createdBy": { ".validate": "newData.isString()" },
+        "createdAt": { ".validate": "newData.isNumber()" },
+        "$other": { ".validate": false }
+      }
+    },
+
+    "delegatedMembers": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && (newData.child('createdBy').val() === auth.uid || root.child('tribus').child(newData.child('tribu').val()).child('patriarcheUid').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".validate": "newData.hasChildren(['nom', 'prenom', 'sexe', 'avatarId', 'tribu', 'estDelegue', 'createdBy', 'createdAt'])",
+        "nom":    { ".validate": "newData.isString() && newData.val().length <= 50" },
+        "prenom": { ".validate": "newData.isString() && newData.val().length <= 50" },
+        "sexe":   { ".validate": "newData.val() === 'homme' || newData.val() === 'femme'" },
+        "avatarId": { ".validate": "newData.isString() && newData.val().length <= 30" },
+        "tribu":  { ".validate": "newData.isString()" },
+        "contact": { ".validate": "newData.isString() && newData.val().length <= 20" },
+        "lieuHabitation": { ".validate": "newData.isString() && newData.val().length <= 100" },
+        "estDelegue": { ".validate": "newData.val() === true" },
+        "createdBy": { ".validate": "newData.isString()" },
+        "createdAt": { ".validate": "newData.isNumber()" },
+        "$other": { ".validate": false }
       }
     },
 
@@ -37,14 +73,14 @@
         "premium": { ".validate": "newData.isBoolean()" },
         "profileComplete": { ".validate": "newData.isBoolean()" },
         "biblePlan": {
-  ".validate": "newData.hasChildren(['bookCode', 'nbJours', 'startDate'])",
-  "bookCode": { ".validate": "newData.isString()" },
-  "bookLabel": { ".validate": "newData.isString()" },
-  "nbJours": { ".validate": "newData.isNumber()" },
-  "startDate": { ".validate": "newData.isString()" },
-  "completedDays": { ".validate": "newData.hasChildren() || newData.val() === null" },
-  "createdAt": { ".validate": "newData.isNumber()" }
-},
+          ".validate": "newData.hasChildren(['bookCode', 'nbJours', 'startDate'])",
+          "bookCode": { ".validate": "newData.isString()" },
+          "bookLabel": { ".validate": "newData.isString()" },
+          "nbJours": { ".validate": "newData.isNumber()" },
+          "startDate": { ".validate": "newData.isString()" },
+          "completedDays": { ".validate": "newData.hasChildren() || newData.val() === null" },
+          "createdAt": { ".validate": "newData.isNumber()" }
+        },
         "createdAt": { ".validate": "newData.isNumber() || newData.val() === null" },
         "badges": {
           ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
@@ -109,14 +145,16 @@
     "attendance": {
       ".read": "auth != null",
       "$date": {
-        "$culteKey": {
+        "$culteId": {
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || (root.child('tribus').child($tribu).child('patriarcheUid').val() === auth.uid && root.child('cultes').child($culteId).child('closed').val() !== true))",
+          "closed": {
+            ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('tribus').child($tribu).child('patriarcheUid').val() === auth.uid)"
+          },
           "$tribu": {
             "$uid": {
-              ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('tribu').val() === $tribu)"
+              ".validate": "newData.hasChildren(['uid', 'name', 'status', 'markedBy', 'markedAt'])",
+              "status": { ".validate": "newData.val() === 'present' || newData.val() === 'absent'" }
             }
-          },
-          "closed": {
-            ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
           }
         }
       }

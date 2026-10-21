@@ -4,6 +4,7 @@ import { get as idbGet, set as idbSet } from 'idb-keyval'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { findTribu, findStatut } from '../utils/groups'
+import { listenAllPatriarches, getTribuOfPatriarche } from '../utils/patriarches'
 import ServiceDirectory from '../components/ServiceDirectory'
 import PostFeed from '../components/PostFeed'
 import PostComposer from '../components/PostComposer'
@@ -20,28 +21,25 @@ import MyProfile from './MyProfile'
 import Attendance from './Attendance'
 import AttendanceReport from '../components/AttendanceReport'
 
-const STATIC_TABS = [
+const BASE_TABS = [
   'Actualités',
   'Bible',
   'Témoignages',
-  'Présence',
   'Mon profil',
   'Infos travail',
   'Marché',
-  'Rapport de présence',
-  'Service',
-  'Administration'
+  'Service'
 ]
 
 export default function Home() {
-  const { profile, isSemiAdmin, isAdmin, isPremium, canManage, logout, offline } = useAuth()
+  const { user, profile, isSemiAdmin, isAdmin, isPremium, canManage, logout, offline } = useAuth()
   const [tab, setTab] = useState('Actualités')
   const [allUsers, setAllUsers] = useState({})
   const [allBadges, setAllBadges] = useState({})
+  const [patriarchesMap, setPatriarchesMap] = useState({})
 
   useEffect(() => {
     async function loadData() {
-      // 1. Lecture immédiate depuis IndexedDB
       try {
         const cachedUsers = await idbGet('cache-all-users')
         if (cachedUsers) setAllUsers(cachedUsers)
@@ -52,13 +50,8 @@ export default function Home() {
         console.warn('Erreur lecture cache users/badges:', e)
       }
 
-      // 2. Hors ligne → on s'arrête là
-      if (!navigator.onLine) {
-        console.log('📵 Hors ligne, données depuis le cache')
-        return
-      }
+      if (!navigator.onLine) return
 
-      // 3. Firebase pour rafraîchir
       try {
         const usersSnap = await get(ref(db, 'users'))
         const usersData = usersSnap.val() || {}
@@ -70,7 +63,7 @@ export default function Home() {
         setAllBadges(badgesData)
         await idbSet('cache-all-badges', badgesData)
       } catch (err) {
-        console.warn('Erreur chargement Firebase (fallback cache):', err)
+        console.warn('Erreur chargement Firebase:', err)
       }
     }
 
@@ -80,6 +73,13 @@ export default function Home() {
     window.addEventListener('online', handleOnline)
     return () => window.removeEventListener('online', handleOnline)
   }, [])
+
+  useEffect(() => {
+    const unsub = listenAllPatriarches(setPatriarchesMap)
+    return unsub
+  }, [])
+
+  const amIPatriarche = !!getTribuOfPatriarche(user?.uid, patriarchesMap)
 
   const myGroups = useMemo(() => {
     if (!profile) return []
@@ -113,11 +113,9 @@ export default function Home() {
   }, [profile, allUsers, allBadges])
 
   const visibleTabs = [
-    ...STATIC_TABS.filter((t) => {
-      if (t === 'Administration' && !isAdmin) return false
-      if (t === 'Rapport de présence' && !isAdmin) return false
-      return true
-    }),
+    ...BASE_TABS,
+    ...(isAdmin || amIPatriarche ? ['Présence'] : []),
+    ...(isAdmin ? ['Rapport de présence', 'Administration'] : []),
     ...(profile?.sexe === 'femme' ? ['Leaman'] : []),
     ...(profile?.sexe === 'homme' ? ['Kanegnon'] : []),
     ...myGroups.map((g) => g.label)
@@ -138,6 +136,7 @@ export default function Home() {
             <span>
               {profile?.prenom} {profile?.nom}
               {isAdmin && ' (Admin)'} {!isAdmin && isSemiAdmin && ' (Semi-admin)'}
+              {amIPatriarche && ' 👑'}
               <PremiumBadge show={isPremium} />
             </span>
           </button>
