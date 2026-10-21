@@ -16,12 +16,15 @@ import GroupBoard from '../components/GroupBoard'
 import LeamanBoard from '../components/LeamanBoard'
 import KanegnonBoard from '../components/KanegnonBoard'
 import Avatar from '../components/Avatar'
+import DirectAudio from '../components/DirectAudio'
 import Bible from './Bible'
 import MyProfile from './MyProfile'
 import Attendance from './Attendance'
 import AttendanceReport from '../components/AttendanceReport'
 
 const BASE_TABS = [
+  'Communion Fraternelle',
+  'Direct',
   'Actualités',
   'Bible',
   'Témoignages',
@@ -33,7 +36,7 @@ const BASE_TABS = [
 
 export default function Home() {
   const { user, profile, isSemiAdmin, isAdmin, isPremium, canManage, logout, offline } = useAuth()
-  const [tab, setTab] = useState('Actualités')
+  const [tab, setTab] = useState('Communion Fraternelle') // L'onglet par défaut à l'ouverture
   const [allUsers, setAllUsers] = useState({})
   const [allBadges, setAllBadges] = useState({})
   const [patriarchesMap, setPatriarchesMap] = useState({})
@@ -159,6 +162,21 @@ export default function Home() {
       </nav>
 
       <main className="tab-content">
+        {/* NOUVEAU : Communion Fraternelle */}
+        {tab === 'Communion Fraternelle' && (
+          <div>
+            <h2>🌍 Communion Fraternelle</h2>
+            <p className="muted-small" style={{ marginBottom: 16 }}>
+              Espace de partage ouvert à tous les membres. Publie des textes et des photos.
+            </p>
+            <PostComposer basePath="posts/communion" defaultDurationHours={720} />
+            <PostFeed basePath="posts/communion" canDelete={true} />
+          </div>
+        )}
+
+        {/* NOUVEAU : Direct Audio */}
+        {tab === 'Direct' && <DirectAudio />}
+
         {tab === 'Actualités' && (
           <div>
             {canManage('actualites') && (
@@ -167,10 +185,12 @@ export default function Home() {
             <PostFeed basePath="posts/culte" canDelete={canManage('actualites')} />
           </div>
         )}
+
         {tab === 'Bible' && <Bible />}
         {tab === 'Témoignages' && <Testimonies />}
         {tab === 'Présence' && <Attendance />}
         {tab === 'Mon profil' && <MyProfile />}
+        
         {tab === 'Infos travail' && (
           <div>
             {canManage('infosTravail') && (
@@ -179,12 +199,14 @@ export default function Home() {
             <PostFeed basePath="posts/travail" canDelete={canManage('infosTravail')} />
           </div>
         )}
+        
         {tab === 'Marché' && <Marketplace />}
         {tab === 'Rapport de présence' && isAdmin && <AttendanceReport />}
         {tab === 'Service' && <ServiceDirectory />}
         {tab === 'Administration' && isAdmin && <AdminPanel />}
         {tab === 'Leaman' && profile?.sexe === 'femme' && <LeamanBoard />}
         {tab === 'Kanegnon' && profile?.sexe === 'homme' && <KanegnonBoard />}
+        
         {activeGroup && <GroupBoard groupPath={activeGroup.path} title={activeGroup.label} />}
       </main>
     </div>

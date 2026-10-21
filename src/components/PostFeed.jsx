@@ -14,15 +14,23 @@ export default function PostFeed({ basePath, canDelete }) {
   const [posts, setPosts] = useState([])
 
   useEffect(() => {
+    // 1. Charger le cache immédiatement
     getCachedMessages(basePath).then((cached) => {
       if (Object.keys(cached).length > 0) {
-        setPosts(Object.entries(cached).filter(([, p]) => !isExpired(p)).map(([id, p]) => ({ id, ...p })).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)))
+        setPosts(Object.entries(cached)
+          .filter(([, p]) => !isExpired(p))
+          .map(([id, p]) => ({ id, ...p }))
+          .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)))
       }
     })
 
+    // 2. Écouter Firebase en temps réel
     const unsubscribe = listenMessages(basePath, async (data) => {
       await cleanupExpiredPosts(basePath, data)
-      const list = Object.entries(data).filter(([, p]) => !isExpired(p)).map(([id, p]) => ({ id, ...p })).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+      const list = Object.entries(data)
+        .filter(([, p]) => !isExpired(p))
+        .map(([id, p]) => ({ id, ...p }))
+        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
       setPosts(list)
     })
     return unsubscribe
@@ -47,17 +55,24 @@ export default function PostFeed({ basePath, canDelete }) {
             <span className="expiry">{new Date(post.createdAt).toLocaleString('fr-FR')}</span>
           </div>
 
+          {/* TEXTE DU MESSAGE */}
           {post.content && <p style={{ whiteSpace: 'pre-wrap' }}>{post.content}</p>}
           
-          {/* Affichage des images */}
+          {/* AFFICHAGE DES IMAGES */}
           {post.images && post.images.length > 0 && (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
               {post.images.map((img, i) => (
-                <img key={i} src={img} alt="Publication" style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 10, objectFit: 'cover' }} />
+                <img 
+                  key={i} 
+                  src={img} 
+                  alt="Publication" 
+                  style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 10, objectFit: 'cover' }} 
+                />
               ))}
             </div>
           )}
 
+          {/* RÉACTIONS */}
           <div className="reactions">
             {REACTION_EMOJIS.map((emoji) => {
               const count = post.reactions?.[emoji] ? Object.keys(post.reactions[emoji]).length : 0
@@ -70,6 +85,7 @@ export default function PostFeed({ basePath, canDelete }) {
             })}
           </div>
 
+          {/* BOUTON SUPPRIMER */}
           {canDelete && (
             <button className="delete-btn" onClick={() => { if(window.confirm('Supprimer ?')) remove(ref(db, `${basePath}/${post.id}`)) }}>
               🗑️ Supprimer
