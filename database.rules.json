@@ -4,18 +4,14 @@
       ".read": "auth != null",
       ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
     },
-
     "tribus": {
       ".read": "auth != null",
       "$tribuKey": {
         ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
-        "patriarcheUid": {
-          ".validate": "newData.isString() || newData.val() === null"
-        },
+        "patriarcheUid": { ".validate": "newData.isString() || newData.val() === null" },
         "$other": { ".validate": false }
       }
     },
-
     "cultes": {
       ".read": "auth != null",
       ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
@@ -31,7 +27,6 @@
         "$other": { ".validate": false }
       }
     },
-
     "delegatedMembers": {
       ".read": "auth != null",
       "$uid": {
@@ -50,7 +45,6 @@
         "$other": { ".validate": false }
       }
     },
-
     "users": {
       ".read": "auth != null",
       "$uid": {
@@ -93,73 +87,54 @@
         "$other": { ".validate": false }
       }
     },
-
     "posts": {
       ".read": "auth != null",
       "culte": {
         ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('secteurs').child('actualites').val() === true)",
-        "$postId": {
-          ".validate": "newData.hasChildren(['authorUid', 'createdAt', 'expiresAt', 'type'])"
-        }
+        "$postId": { ".validate": "newData.hasChildren(['authorUid', 'createdAt', 'expiresAt', 'type'])" }
       },
       "travail": {
         ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('secteurs').child('infosTravail').val() === true)",
-        "$postId": {
-          ".validate": "newData.hasChildren(['authorUid', 'createdAt', 'expiresAt', 'type'])"
-        }
+        "$postId": { ".validate": "newData.hasChildren(['authorUid', 'createdAt', 'expiresAt', 'type'])" }
       },
       "communion": {
         ".write": "auth != null",
         "$postId": {
           ".validate": "newData.hasChildren(['authorUid', 'createdAt', 'expiresAt', 'content'])",
-          "images": {
-            ".validate": "newData.isString() || newData.hasChildren() || newData.val() === null"
-          }
+          "images": { ".validate": "newData.isString() || newData.hasChildren() || newData.val() === null" }
         }
       }
     },
-
     "groupes": {
       ".read": "auth != null",
       "$groupPath": {
         ".write": "auth != null",
-        "$postId": {
-          ".validate": "newData.hasChildren(['authorUid', 'createdAt', 'expiresAt', 'content'])"
-        }
+        "$postId": { ".validate": "newData.hasChildren(['authorUid', 'createdAt', 'expiresAt', 'content'])" }
       }
     },
-
     "temoignages": {
       ".read": "auth != null",
       ".write": "auth != null",
       "$id": {
         ".validate": "newData.hasChildren(['authorUid', 'approved', 'createdAt', 'type'])",
-        "approved": {
-          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('secteurs').child('temoignages').val() === true)"
-        }
+        "approved": { ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('secteurs').child('temoignages').val() === true)" }
       }
     },
-
     "marche": {
       ".read": "auth != null",
       ".write": "auth != null",
       "$articleId": {
         ".validate": "newData.hasChildren(['authorUid', 'titre', 'description', 'createdAt'])",
-        "images": {
-          ".validate": "newData.isString() || newData.hasChildren() || newData.val() === null"
-        }
+        "images": { ".validate": "newData.isString() || newData.hasChildren() || newData.val() === null" }
       }
     },
-
     "attendance": {
       ".read": "auth != null",
       "$date": {
         "$culteId": {
           "$tribu": {
             ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('tribus').child($tribu).child('patriarcheUid').val() === auth.uid)",
-            "closed": {
-              ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('tribus').child($tribu).child('patriarcheUid').val() === auth.uid)"
-            },
+            "closed": { ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('tribus').child($tribu).child('patriarcheUid').val() === auth.uid)" },
             "$uid": {
               ".validate": "newData.hasChildren(['uid', 'name', 'status', 'markedBy', 'markedAt'])",
               "status": { ".validate": "newData.val() === 'present' || newData.val() === 'absent'" }
@@ -168,14 +143,14 @@
         }
       }
     },
-
     "live": {
       ".read": "auth != null",
       "direct": {
-        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        ".write": "auth != null",
         ".validate": "newData.hasChildren(['active', 'hostUid', 'hostName', 'startedAt', 'lastPing']) || newData.val() === null"
       },
       "auditeurs": {
+        ".read": "auth != null",
         ".write": "auth != null",
         "$uid": {
           ".validate": "newData.hasChildren(['uid', 'name', 'joinedAt']) || newData.val() === null"
@@ -183,13 +158,12 @@
       },
       "historique": {
         ".read": "auth != null",
-        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        ".write": "auth != null",
         "$id": {
           ".validate": "newData.hasChildren(['hostUid', 'hostName', 'startedAt', 'endedAt', 'auditeurs'])"
         }
       }
     },
-
     "$other": {
       ".read": false,
       ".write": false
