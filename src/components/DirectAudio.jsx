@@ -17,7 +17,18 @@ export default function DirectAudio() {
   const localAudioTrackRef = useRef(null)
   const auditeursRef = useRef([])
 
-  // 1. Fonction de nettoyage (si on quitte la page brutalement)
+  // ⚠️ FONCTION ANTI-ÉCHO : Détruit les lecteurs audio locaux du navigateur
+  function disableLocalPlayback() {
+    const audioElements = document.querySelectorAll('audio')
+    audioElements.forEach((audio) => {
+      if (audio.srcObject && audio.srcObject.getAudioTracks && audio.srcObject.getAudioTracks().length > 0) {
+        audio.pause()
+        audio.srcObject = null
+      }
+    })
+  }
+
+  // 1. Nettoyage si on quitte brutalement
   const cleanupFirebase = async () => {
     if (isHost && user) {
       const liveSnap = await new Promise((resolve) => {
@@ -25,7 +36,6 @@ export default function DirectAudio() {
       })
       const data = liveSnap.val()
       
-      // Si c'est bien notre direct qu'on a oublié de fermer
       if (data?.active && data.hostUid === user.uid) {
         await push(ref(db, 'live/historique'), {
           hostUid: user.uid,
@@ -40,7 +50,7 @@ export default function DirectAudio() {
     }
   }
 
-  // 2. Détecter si on ferme l'onglet ou recharge la page
+  // 2. Détecter fermeture
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (isHost) cleanupFirebase()
@@ -48,12 +58,11 @@ export default function DirectAudio() {
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload)
-      // Nettoyage si le composant est démonté (changement d'onglet)
       if (isHost) cleanupFirebase()
     }
   }, [isHost, user])
 
-  // 3. Écouter l'état du direct dans Firebase
+  // 3. Écouter l'état du direct
   useEffect(() => {
     const unsub = onValue(ref(db, 'live/direct'), (snap) => {
       const data = snap.val()
@@ -67,7 +76,7 @@ export default function DirectAudio() {
     return unsub
   }, [joined])
 
-  // 4. Écouter la liste des auditeurs
+  // 4. Écouter les auditeurs
   useEffect(() => {
     if (!liveData?.active) return
     const unsub = onValue(ref(db, 'live/auditeurs'), (snap) => {
@@ -102,17 +111,24 @@ export default function DirectAudio() {
 
       client.on('user-published', async (user, mediaType) => {
         await client.subscribe(user, mediaType)
-        if (mediaType === 'audio') user.audioTrack.play()
+        if (mediaType === 'audio') {
+          user.audioTrack.play() // On joue bien la voix DES AUTRES
+        }
       })
 
       await client.join(data.appId, data.channel, data.token, data.uid)
 
       if (asHost) {
         const localAudioTrack = await window.AgoraRTC.createMicrophoneAudioTrack({
-          AEC: true, ANS: true
+          AEC: true, 
+          ANS: true
         })
         localAudioTrackRef.current = localAudioTrack
+        
         await client.publish([localAudioTrack])
+        
+        // 🚀 ON COUPE LE SON LOCAL IMMÉDIATEMENT
+        disableLocalPlayback()
         
         await set(ref(db, 'live/direct'), {
           active: true,
@@ -187,7 +203,6 @@ export default function DirectAudio() {
       <h2>🎙️ Direct Audio</h2>
       {error && <p className="error">{error}</p>}
 
-      {/* CAS PARTICULIER : Le direct est bloqué sur mon compte mais je ne suis pas connecté */}
       {amITheHostButNotConnected && (
         <div style={{ background: '#fff3cd', padding: 16, borderRadius: 8, marginBottom: 20 }}>
           <p style={{ color: 'var(--color-crimson-dark)', fontWeight: 'bold' }}>
@@ -205,7 +220,6 @@ export default function DirectAudio() {
         </div>
       )}
 
-      {/* VUE : AUCUN DIRECT EN COURS */}
       {!isLive && !joined && (
         <div>
           <p className="muted-small">Aucun direct en cours pour le moment.</p>
@@ -217,7 +231,6 @@ export default function DirectAudio() {
         </div>
       )}
 
-      {/* VUE : UN DIRECT EST EN COURS (Auditeur qui veut rejoindre) */}
       {isLive && !joined && !amITheHostButNotConnected && (
         <div>
           <p style={{ color: 'var(--color-crimson)', fontWeight: 'bold' }}>
@@ -229,7 +242,6 @@ export default function DirectAudio() {
         </div>
       )}
 
-      {/* VUE : CONNECTÉ (Hôte ou Auditeur) */}
       {joined && (
         <div>
           <p style={{ color: 'var(--color-green)', fontWeight: 'bold', marginBottom: 20 }}>
