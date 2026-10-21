@@ -15,7 +15,7 @@ export default function handler(req, res) {
   // On force l'UID à 0 pour éviter les bugs d'authentification
   const uid = 0
   
-  const role = req.query.role === 'host' ? RtcRole.PUBLISHER : RtcRole.SUBSCRIBER
+ const role = RtcRole.PUBLISHER
   const expirationTimeInSeconds = 3600
   const currentTimestamp = Math.floor(Date.now() / 1000)
   const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds
