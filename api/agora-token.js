@@ -1,5 +1,7 @@
 // api/agora-token.js
-import { RtcTokenBuilder, RtcRole } from 'agora-access-token'
+import pkg from 'agora-access-token'
+
+const { RtcTokenBuilder, RtcRole } = pkg
 
 export default function handler(req, res) {
   const appId = process.env.VITE_AGORA_APP_ID
@@ -7,10 +9,12 @@ export default function handler(req, res) {
   const channelName = req.query.channel || 'vase-honneur-live'
   
   if (!appId || !appCertificate) {
-    return res.status(500).json({ error: "Configuration Agora manquante." })
+    return res.status(500).json({ error: "Configuration Agora manquante (vérifiez vos variables sur Vercel)." })
   }
 
-  const uid = Math.floor(Math.random() * 10000)
+  // On force l'UID à 0 pour éviter les bugs d'authentification
+  const uid = 0
+  
   const role = req.query.role === 'host' ? RtcRole.PUBLISHER : RtcRole.SUBSCRIBER
   const expirationTimeInSeconds = 3600
   const currentTimestamp = Math.floor(Date.now() / 1000)
