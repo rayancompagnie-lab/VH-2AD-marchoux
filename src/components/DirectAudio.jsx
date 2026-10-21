@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { ref, onValue, set, remove, push, update } from 'firebase/database'
 import { db } from '../firebase'
 
-// ✅ SÉCURITÉ : On charge le SDK Agora UNE SEULE FOIS pour toute l'application
+// Chargement unique du SDK Agora
 if (typeof window !== 'undefined' && !window.AgoraRTC && !document.getElementById('agora-script')) {
   const script = document.createElement('script')
   script.id = 'agora-script'
@@ -27,6 +27,7 @@ export default function DirectAudio() {
   const auditeursRef = useRef([])
   const isLeavingRef = useRef(false)
 
+  // Nettoie les balises audio cachées du navigateur pour couper l'écho local
   function disableLocalPlayback() {
     document.querySelectorAll('audio').forEach((audio) => {
       if (audio.srcObject && audio.srcObject.getAudioTracks?.().length > 0) {
@@ -65,7 +66,7 @@ export default function DirectAudio() {
     }
   }, [isHost, user])
 
-  // ✅ SÉCURITÉ ANTI-FANTÔME : Si l'hôte plante, on nettoie après 15 secondes
+  // Sécurité anti-fantôme
   useEffect(() => {
     const interval = setInterval(async () => {
       const snap = await new Promise((resolve) => onValue(ref(db, 'live/direct'), resolve, { onlyOnce: true }))
@@ -78,12 +79,10 @@ export default function DirectAudio() {
     return () => clearInterval(interval)
   }, [])
 
-  // Ping de l'hôte pour prouver qu'il est en vie
+  // Ping pour dire qu'on est en vie
   useEffect(() => {
     if (!isHost) return
-    const pingInterval = setInterval(() => {
-      update(ref(db, 'live/direct'), { lastPing: Date.now() })
-    }, 5000)
+    const pingInterval = setInterval(() => { update(ref(db, 'live/direct'), { lastPing: Date.now() }) }, 5000)
     return () => clearInterval(pingInterval)
   }, [isHost])
 
@@ -129,9 +128,15 @@ export default function DirectAudio() {
       await client.join(data.appId, data.channel, data.token, data.uid)
 
       if (asHost) {
-        const localAudioTrack = await window.AgoraRTC.createMicrophoneAudioTrack({ AEC: true, ANS: true })
+        // Création de la piste micro
+        const localAudioTrack = await window.AgoraRTC.createMicrophoneAudioTrack({ 
+          AEC: true, 
+          ANS: true 
+        })
         localAudioTrackRef.current = localAudioTrack
         await client.publish([localAudioTrack])
+        
+        // 🚀 ON FORCE LA COUPURE DE L'ÉCHO LOCAL ICI
         disableLocalPlayback()
         
         await set(ref(db, 'live/direct'), {
@@ -171,6 +176,21 @@ export default function DirectAudio() {
     setTimeout(() => { isLeavingRef.current = false }, 500)
   }
 
+  // 🚀 LA FAMEUSE FONCTION MUET CORRIGÉE
+  async function toggleMute() {
+    if (!localAudioTrackRef.current) return
+
+    if (isMuted) {
+      // Réactiver le micro
+      await localAudioTrackRef.current.setEnabled(true)
+      setIsMuted(false)
+    } else {
+      // Couper le micro (setEnabled arrête physiquement la capture)
+      await localAudioTrackRef.current.setEnabled(false)
+      setIsMuted(true)
+    }
+  }
+
   if (loading) return <p>Chargement...</p>
 
   const isLive = !!liveData?.active
@@ -185,9 +205,7 @@ export default function DirectAudio() {
       {amITheHostButNotConnected && (
         <div style={{ background: '#fff3cd', padding: 16, borderRadius: 8, marginBottom: 20 }}>
           <p style={{ color: 'var(--color-crimson-dark)', fontWeight: 'bold' }}>⚠️ Ancien direct resté ouvert.</p>
-          <button onClick={() => cleanupFirebase(true)} style={{ background: 'var(--color-crimson)', color: 'white', padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer' }}>
-            Forcer la fermeture
-          </button>
+          <button onClick={() => cleanupFirebase(true)} style={{ background: 'var(--color-crimson)', color: 'white', padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer' }}>Forcer la fermeture</button>
         </div>
       )}
 
@@ -209,8 +227,14 @@ export default function DirectAudio() {
         <div>
           <p style={{ color: 'var(--color-green)', fontWeight: 'bold', marginBottom: 20 }}>{isHost ? "✅ Vous êtes en direct" : "✅ Vous écoutez le direct"}</p>
           <div style={{ marginBottom: 20 }}>
-            {isHost && <button onClick={() => { if (isMuted) localAudioTrackRef.current.setMuted(false); else localAudioTrackRef.current.setMuted(true); setIsMuted(!isMuted); }} style={{ marginRight: 10, padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', background: isMuted ? 'var(--color-crimson)' : 'var(--color-green)', color: 'white', fontWeight: 'bold' }}>{isMuted ? '🎙️ Activer' : '🔇 Couper'}</button>}
-            <button onClick={() => leaveChannel(true)} style={{ background: 'var(--color-crimson-dark)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 8, fontWeight: 'bold' }}>{isHost ? "Arrêter" : "Quitter"}</button>
+            {isHost && (
+              <button onClick={toggleMute} style={{ marginRight: 10, padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', background: isMuted ? 'var(--color-crimson)' : 'var(--color-green)', color: 'white', fontWeight: 'bold' }}>
+                {isMuted ? '🎙️ Activer' : '🔇 Couper'}
+              </button>
+            )}
+            <button onClick={() => leaveChannel(true)} style={{ background: 'var(--color-crimson-dark)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 8, fontWeight: 'bold' }}>
+              {isHost ? "Arrêter" : "Quitter"}
+            </button>
           </div>
           {(isHost || isAdmin) && (
             <div style={{ background: '#faf7ee', padding: 16, borderRadius: 12, maxWidth: 300, margin: '0 auto', border: '1px solid #ddd6c8' }}>
