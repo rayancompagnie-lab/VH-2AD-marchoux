@@ -16,8 +16,8 @@ export default function DirectAudio() {
   const clientRef = useRef(null)
   const localAudioTrackRef = useRef(null)
   const auditeursRef = useRef([])
+  const isLeavingRef = useRef(false) // 🔒 Verrou pour éviter le double déclenchement
 
-  // ⚠️ FONCTION ANTI-ÉCHO : Détruit les lecteurs audio locaux du navigateur
   function disableLocalPlayback() {
     const audioElements = document.querySelectorAll('audio')
     audioElements.forEach((audio) => {
@@ -28,9 +28,9 @@ export default function DirectAudio() {
     })
   }
 
-  // 1. Nettoyage si on quitte brutalement
   const cleanupFirebase = async () => {
-    if (isHost && user) {
+    if (isHost && user && !isLeavingRef.current) {
+      isLeavingRef.current = true
       const liveSnap = await new Promise((resolve) => {
         onValue(ref(db, 'live/direct'), resolve, { onlyOnce: true })
       })
@@ -50,7 +50,6 @@ export default function DirectAudio() {
     }
   }
 
-  // 2. Détecter fermeture
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (isHost) cleanupFirebase()
@@ -62,21 +61,20 @@ export default function DirectAudio() {
     }
   }, [isHost, user])
 
-  // 3. Écouter l'état du direct
   useEffect(() => {
     const unsub = onValue(ref(db, 'live/direct'), (snap) => {
       const data = snap.val()
       setLiveData(data)
       setLoading(false)
       
-      if (!data?.active && joined) {
+      // Si le direct est coupé (par nous ou par un autre admin) et qu'on est encore connecté
+      if (!data?.active && joined && !isLeavingRef.current) {
         leaveChannel(false)
       }
     })
     return unsub
   }, [joined])
 
-  // 4. Écouter les auditeurs
   useEffect(() => {
     if (!liveData?.active) return
     const unsub = onValue(ref(db, 'live/auditeurs'), (snap) => {
@@ -88,7 +86,6 @@ export default function DirectAudio() {
     return unsub
   }, [liveData?.active])
 
-  // 5. Charger le SDK
   useEffect(() => {
     if (window.AgoraRTC) return
     const script = document.createElement('script')
@@ -100,6 +97,7 @@ export default function DirectAudio() {
   async function joinChannel(asHost = false) {
     if (!window.AgoraRTC) return setError("SDK en chargement...")
     setError('')
+    isLeavingRef.current = false // On réinitialise le verrou
     
     try {
       const res = await fetch(`/api/agora-token?role=${asHost ? 'host' : 'audience'}`)
@@ -112,7 +110,7 @@ export default function DirectAudio() {
       client.on('user-published', async (user, mediaType) => {
         await client.subscribe(user, mediaType)
         if (mediaType === 'audio') {
-          user.audioTrack.play() // On joue bien la voix DES AUTRES
+          user.audioTrack.play()
         }
       })
 
@@ -124,10 +122,7 @@ export default function DirectAudio() {
           ANS: true
         })
         localAudioTrackRef.current = localAudioTrack
-        
         await client.publish([localAudioTrack])
-        
-        // 🚀 ON COUPE LE SON LOCAL IMMÉDIATEMENT
         disableLocalPlayback()
         
         await set(ref(db, 'live/direct'), {
@@ -153,6 +148,11 @@ export default function DirectAudio() {
   }
 
   async function leaveChannel(updateFirebase = true) {
+    // Si on a déjà cliqué sur le bouton, on ne fait rien
+    if (isLeavingRef.current && updateFirebase) return
+    if (updateFirebase) isLeavingRef.current = true
+
+    // On fait le nettoyage audio et Agora
     if (updateFirebase && !isHost) {
       await remove(ref(db, `live/auditeurs/${user.uid}`))
     }
@@ -180,9 +180,15 @@ export default function DirectAudio() {
       await remove(ref(db, 'live/auditeurs'))
     }
     
+    // On remet l'interface à zéro
     setJoined(false)
     setIsMuted(false)
     setIsHost(false)
+    
+    // On laisse un petit délai avant de libérer le verrou pour que l'interface se mette à jour
+    setTimeout(() => {
+      isLeavingRef.current = false
+    }, 500)
   }
 
   async function toggleMute() {
